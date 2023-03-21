@@ -18,7 +18,11 @@ pip install -r requirements-dev.txt
 pip install -r requirements.txt --extra-index-url <your-dash-enterprise-packages-url>
 ```
 
-1. Run the following command:
+2. Set up environment variables 
+
+Data access via the [Copernicus Open Access Hub](https://scihub.copernicus.eu/dhus/#/home) requires login credentials which should be stored under `DHUS_USER` and `DHUS_PASSWORD` environment variables. These can be stored in a `.env` file for local development. 
+
+3. Run the following command:
 
 ```python
 python app.py
