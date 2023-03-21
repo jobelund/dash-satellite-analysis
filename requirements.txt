@@ -1,0 +1,10 @@
+dash_design_kit==1.6.8
+dash==2.6.2
+gunicorn==20.0.4
+pandas==1.5.1
+werkzeug==2.2.2
+dash-ag-grid==2.0.0a1
+dash-leaflet==0.1.23
+dash-mantine-components==0.12.0
+geopandas==0.12.2
+sentinelsat==1.2.1
