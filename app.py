@@ -1,17 +1,31 @@
 import dash
 import dash_design_kit as ddk
-from dash import dcc, html, Input, Output
+from dash import dcc, html, Input, Output, State
 import plotly.express as px
 import dash_leaflet as dl
 from datetime import date
 import dash_mantine_components as dmc
 import dash_ag_grid as dag
+from dash_extensions.javascript import assign
+from utils.data_utils import get_image
+from constants import IMG_DIM
+
 
 app = dash.Dash(__name__)
 app.title = "Land cover analysis and classification"
 server = app.server  # expose server variable for Procfile
 
 df = px.data.stocks()
+
+# How to render geojson.
+point_to_layer = assign(
+    """function(feature, latlng, context){
+    const p = feature.properties;
+    if(p.type === 'circlemarker'){return L.circleMarker(latlng, radius=p._radius)}
+    if(p.type === 'circle'){return L.circle(latlng, radius=p._mRadius)}
+    return L.marker(latlng);
+}"""
+)
 
 app.layout = ddk.App(
     [
@@ -29,7 +43,7 @@ app.layout = ddk.App(
                         ddk.CardHeader(title="Data access"),
                         dmc.Space(h=30),
                         ddk.ControlItem(
-                            label="Maximum cloud cover percentage",
+                            label="Dim",
                             children=dcc.Slider(
                                 min=0,
                                 max=100,
@@ -43,25 +57,16 @@ app.layout = ddk.App(
                             ),
                         ),
                         ddk.ControlItem(
-                            label="Date range",
-                            children=dcc.DatePickerRange(
-                                id="my-date-picker-range",
+                            label="Date",
+                            children=dcc.DatePickerSingle(
+                                id="my-date-picker",
                                 min_date_allowed=date(1995, 8, 5),
                                 max_date_allowed=date(2017, 9, 19),
-                                start_date=date(2017, 5, 5),
-                                end_date=date(2017, 8, 25),
-                            ),
-                        ),
-                        ddk.ControlItem(
-                            label="Product type",
-                            children=dcc.RadioItems(
-                                ["Level-1B", "Level-1C", "Level-2A"],
-                                "Level-2A",
-                                inline=True,
+                                date=date(2014, 2, 4),
                             ),
                         ),
                         dmc.Space(h=50),
-                        html.Button("Retrieve image options", id="get-data"),
+                        html.Button("Download image", id="get-data"),
                     ],
                     style={"height": "550px"},
                 ),
@@ -80,8 +85,20 @@ app.layout = ddk.App(
                                         url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
                                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>',
                                     ),
-                                    dl.GeoJSON(data="assets/bangladesh.json"),
-                                    dl.LayersControl(),
+                                    dl.GeoJSON(
+                                        id="geojson",
+                                        options=dict(
+                                            pointToLayer=point_to_layer
+                                        ),
+                                        zoomToBounds=True,
+                                    ),
+                                    dl.LayersControl(
+                                        dl.Overlay(
+                                            name="Satellite image",
+                                            checked=False,
+                                            id="satellite-img",
+                                        ),
+                                    ),
                                     dl.FeatureGroup(
                                         [dl.EditControl(id="edit_control")]
                                     ),
@@ -126,12 +143,49 @@ app.layout = ddk.App(
 )
 
 
-# Copy data from the edit control to the geojson component.
-# @app.callback(Output("geojson", "data"), Input("edit_control", "geojson"))
-# def mirror(x):
-#     if not x:
-#         raise PreventUpdate
-#     return x
+# Get selected location data from the edit control to the geojson component.
+@app.callback(
+    Output("geojson", "data"),
+    Input("edit_control", "geojson"),
+    prevent_initial_call=True,
+)
+def loc_data(geojson):
+    return geojson
+
+
+@app.callback(
+    Output("satellite-img", "children"),
+    Input("get-data", "n_clicks"),
+    State("my-date-picker", "date"),
+    State("geojson", "data"),
+    prevent_initial_call=True,
+)
+def loc_data(n_clicks, date, geojson):
+    if n_clicks:
+        print(geojson)
+        lon, lat = geojson["features"][0]["geometry"]["coordinates"]
+        image = get_image(lon, lat, date)
+        image_bounds = [
+            [(lat - (IMG_DIM / 2)), (lon - ((IMG_DIM / 2)))],
+            [(lat + (IMG_DIM / 2)), (lon + ((IMG_DIM / 2)))],
+        ]
+        if image != None:
+            img_overlay = (
+                dl.LayerGroup(
+                    dl.ImageOverlay(
+                        opacity=0.95,
+                        url=image,
+                        bounds=image_bounds,
+                    )
+                ),
+            )
+            return img_overlay
+        else:
+            return dcc.Markdown(
+                "Image is not available for the specified date or location."
+            )
+    else:
+        return dash.no_update
 
 
 @app.callback(
