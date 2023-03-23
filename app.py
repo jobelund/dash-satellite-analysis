@@ -8,7 +8,6 @@ import dash_mantine_components as dmc
 import dash_ag_grid as dag
 from dash_extensions.javascript import assign
 from utils.data_utils import get_image
-from constants import IMG_DIM
 
 
 app = dash.Dash(__name__)
@@ -45,10 +44,11 @@ app.layout = ddk.App(
                         ddk.ControlItem(
                             label="Dim",
                             children=dcc.Slider(
+                                id="img-dim",
                                 min=0,
-                                max=100,
-                                step=10,
-                                value=20,
+                                max=1,
+                                step=0.1,
+                                value=0.1,
                                 marks=None,
                                 tooltip={
                                     "placement": "bottom",
@@ -58,11 +58,22 @@ app.layout = ddk.App(
                         ),
                         ddk.ControlItem(
                             label="Date",
-                            children=dcc.DatePickerSingle(
+                            children=dmc.DatePicker(
                                 id="my-date-picker",
-                                min_date_allowed=date(1995, 8, 5),
-                                max_date_allowed=date(2017, 9, 19),
-                                date=date(2014, 2, 4),
+                                minDate=date(2015, 8, 5),
+                                value=date(2020, 8, 5),
+                            ),
+                        ),
+                        ddk.ControlItem(
+                            label="Latitude",
+                            children=dcc.Input(
+                                id="lat", min=-90, max=90, value=50.23
+                            ),
+                        ),
+                        ddk.ControlItem(
+                            label="Longitude",
+                            children=dcc.Input(
+                                id="lon", min=-180, max=180, value=-120
                             ),
                         ),
                         dmc.Space(h=50),
@@ -95,7 +106,7 @@ app.layout = ddk.App(
                                     dl.LayersControl(
                                         dl.Overlay(
                                             name="Satellite image",
-                                            checked=False,
+                                            checked=True,
                                             id="satellite-img",
                                         ),
                                     ),
@@ -156,24 +167,27 @@ def loc_data(geojson):
 @app.callback(
     Output("satellite-img", "children"),
     Input("get-data", "n_clicks"),
-    State("my-date-picker", "date"),
-    State("geojson", "data"),
+    State("my-date-picker", "value"),
+    State("lat", "value"),
+    State("lon", "value"),
+    State("img-dim", "value"),
     prevent_initial_call=True,
 )
-def loc_data(n_clicks, date, geojson):
+def loc_data(n_clicks, date, lat, lon, dim):
     if n_clicks:
-        print(geojson)
-        lon, lat = geojson["features"][0]["geometry"]["coordinates"]
-        image = get_image(lon, lat, date)
+        # lat, lon = geojson["features"][0]["geometry"]["coordinates"]
+        image = get_image(lat, lon, dim, date)
         image_bounds = [
-            [(lat - (IMG_DIM / 2)), (lon - ((IMG_DIM / 2)))],
-            [(lat + (IMG_DIM / 2)), (lon + ((IMG_DIM / 2)))],
+            [(lat - (dim / 2)), (lon - ((dim / 2)))],
+            [(lat + (dim / 2)), (lon + ((dim / 2)))],
         ]
-        if image != None:
+        if image:
+            print(image)
             img_overlay = (
                 dl.LayerGroup(
                     dl.ImageOverlay(
                         opacity=0.95,
+                        #url='assets/sample.png',
                         url=image,
                         bounds=image_bounds,
                     )
