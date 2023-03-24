@@ -5,6 +5,7 @@ import pickle
 from constants import redis_instance, REDIS_EXPIRE_SEC, NASA_KEY
 import json
 import pandas as pd
+import dash_leaflet.express as dlx
 
 
 def get_image(lat, lon, dim, date="2014-02-04"):
@@ -41,7 +42,7 @@ def get_image(lat, lon, dim, date="2014-02-04"):
             redis_instance.expire(f"{img_id}_metadata", REDIS_EXPIRE_SEC)
 
             print("Image data successfully retrieved and stored in Redis.")
-            return img
+            return
 
 
 def update_df(df=None):
@@ -55,3 +56,9 @@ def update_df(df=None):
             pickle.loads(redis_instance.get(key)), ignore_index=True
         )
     return df
+
+
+def to_geojson(df):
+    return dlx.dicts_to_geojson(
+        df.rename(columns={"id": "tooltip"}).to_dict("records")
+    )

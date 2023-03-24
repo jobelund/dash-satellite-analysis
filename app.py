@@ -7,13 +7,15 @@ from datetime import date
 import dash_mantine_components as dmc
 import dash_ag_grid as dag
 from dash_extensions.javascript import assign
-from utils.data_utils import get_image, update_df
+from utils.data_utils import get_image, update_df, to_geojson
 import warnings
-import dash_leaflet.express as dlx
+import pickle
+from constants import redis_instance
 
 # Temporary -- muting pandas warnings for using df.append()
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
+button_style = {"width": "80%", "margin": "15px"}
 
 app = dash.Dash(__name__)
 app.title = "Land cover analysis and classification"
@@ -114,13 +116,7 @@ app.layout = ddk.App(
                                                 name="Study areas",
                                                 checked=True,
                                                 children=dl.GeoJSON(
-                                                    data=dlx.dicts_to_geojson(
-                                                        df.rename(
-                                                            columns={
-                                                                "id": "tooltip"
-                                                            }
-                                                        ).to_dict("records")
-                                                    ),
+                                                    data=to_geojson(df),
                                                     id="geojson",
                                                 ),
                                             ),
@@ -152,41 +148,85 @@ app.layout = ddk.App(
                 ddk.CardHeader(title="Select imagery to view"),
                 ddk.Row(
                     [
-                        dag.AgGrid(
-                            id="image-options",
-                            columnDefs=columnDefs,
-                            rowData=df.to_dict("records"),
-                            columnSize="sizeToFit",
-                            defaultColDef=dict(
-                                resizable=True,
-                            ),
+                        ddk.Block(
+                            width=80,
+                            children=[
+                                dag.AgGrid(
+                                    id="image-options",
+                                    columnDefs=columnDefs,
+                                    rowData=df.to_dict("records"),
+                                    columnSize="sizeToFit",
+                                    defaultColDef=dict(
+                                        resizable=True,
+                                    ),
+                                    style={"height": "250px"},
+                                ),
+                            ],
                         ),
-                    ]
-                ),
-                dmc.Space(h=30),
-                dmc.Center(
-                    [
-                        html.Button("Delete selection", id="delete"),
-                        html.Button("Display image", id="display"),
+                        ddk.Block(
+                            width=20,
+                            children=[
+                                dmc.Center(
+                                    html.Button(
+                                        "Display image",
+                                        id="display",
+                                        style=button_style,
+                                    ),
+                                ),
+                                dmc.Center(
+                                    html.Button(
+                                        "Start analysis",
+                                        id="classify",
+                                        style=button_style,
+                                    ),
+                                ),
+                                dmc.Center(
+                                    html.Button(
+                                        "Delete selection",
+                                        id="delete",
+                                        style=button_style,
+                                    )
+                                ),
+                            ],
+                        ),
                     ]
                 ),
                 html.Div(id="delete-div"),
                 html.Div(id="display-div"),
             ],
-            style={"height": "550px"},
+            style={"height": "350px"},
         ),
     ]
 )
 
 
-# Get selected location data from the edit control to the geojson component.
-# @app.callback(
-#     Output("geojson", "data"),
-#     Input("edit_control", "geojson"),
-#     prevent_initial_call=True,
-# )
-# def loc_data(geojson):
-#     return geojson
+@app.callback(
+    Output("satellite-img", "children"),
+    Input("display", "n_clicks"),
+    State("image-options", "selectedRows"),
+)
+def display_image(n_clicks, selection):
+    if n_clicks and selection:
+        img_id = selection[0]["id"]
+        lat = float(selection[0]["lat"])
+        lon = float(selection[0]["lon"])
+        dim = float(selection[0]["dim"])
+        img = pickle.loads(redis_instance.get(img_id))
+
+        image_bounds = [
+            [(lat - (dim / 2)), (lon - ((dim / 2)))],
+            [(lat + (dim / 2)), (lon + ((dim / 2)))],
+        ]
+
+        return (
+            dl.LayerGroup(
+                dl.ImageOverlay(
+                    opacity=0.95,
+                    url=img,
+                    bounds=image_bounds,
+                )
+            ),
+        )
 
 
 # TODO: Finish and merge with bigger callback
@@ -209,15 +249,14 @@ def delete_img(n_clicks, selection):
 )
 def zoom_map(selection):
     if selection:
-        print(selection[0]["lat"])
-        print(selection[0]["lon"])
         return (float(selection[0]["lat"]), float(selection[0]["lon"])), 8
     return dash.no_update
 
 
 @app.callback(
-    Output("satellite-img", "children"),
+    # Output("satellite-img", "children"),
     Output("image-options", "rowData"),
+    Output("geojson", "data"),
     Input("get-data", "n_clicks"),
     State("my-date-picker", "value"),
     State("lat", "value"),
@@ -227,32 +266,10 @@ def zoom_map(selection):
 )
 def loc_data(n_clicks, date, lat, lon, dim):
     if n_clicks:
-        image = get_image(lat, lon, dim, date)
-        image_bounds = [
-            [(lat - (dim / 2)), (lon - ((dim / 2)))],
-            [(lat + (dim / 2)), (lon + ((dim / 2)))],
-        ]
-        if image:
-            img_overlay = (
-                dl.LayerGroup(
-                    dl.ImageOverlay(
-                        opacity=0.95,
-                        url=image,
-                        bounds=image_bounds,
-                    )
-                ),
-            )
-            df = update_df()
-            return img_overlay, df.to_dict("records")
-        else:
-            return (
-                dcc.Markdown(
-                    "Image is not available for the specified date or location."
-                ),
-                dash.no_update,
-            )
-    else:
-        return dash.no_update, dash.no_update
+        get_image(lat, lon, dim, date)
+        df = update_df()
+        return df.to_dict("records"), to_geojson(df)
+    return dash.no_update, dash.no_update
 
 
 # @app.callback(
