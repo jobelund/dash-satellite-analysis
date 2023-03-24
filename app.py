@@ -9,7 +9,9 @@ import dash_ag_grid as dag
 from dash_extensions.javascript import assign
 from utils.data_utils import get_image, update_df
 import warnings
+import dash_leaflet.express as dlx
 
+# Temporary -- muting pandas warnings for using df.append()
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
@@ -26,16 +28,6 @@ columnDefs = [
     {"field": "lon"},
     {"field": "dim"},
 ]
-
-# How to render geojson.
-point_to_layer = assign(
-    """function(feature, latlng, context){
-    const p = feature.properties;
-    if(p.type === 'circlemarker'){return L.circleMarker(latlng, radius=p._radius)}
-    if(p.type === 'circle'){return L.circle(latlng, radius=p._mRadius)}
-    return L.marker(latlng);
-}"""
-)
 
 app.layout = ddk.App(
     [
@@ -115,19 +107,29 @@ app.layout = ddk.App(
                                         url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
                                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>',
                                     ),
-                                    dl.GeoJSON(
-                                        id="geojson",
-                                        options=dict(
-                                            pointToLayer=point_to_layer
-                                        ),
-                                        zoomToBounds=True,
-                                    ),
+                                    dl.GestureHandling(),
                                     dl.LayersControl(
-                                        dl.Overlay(
-                                            name="Satellite image",
-                                            checked=True,
-                                            id="satellite-img",
-                                        ),
+                                        [
+                                            dl.BaseLayer(
+                                                name="Study areas",
+                                                checked=True,
+                                                children=dl.GeoJSON(
+                                                    data=dlx.dicts_to_geojson(
+                                                        df.rename(
+                                                            columns={
+                                                                "id": "tooltip"
+                                                            }
+                                                        ).to_dict("records")
+                                                    ),
+                                                    id="geojson",
+                                                ),
+                                            ),
+                                            dl.Overlay(
+                                                name="Satellite image",
+                                                checked=True,
+                                                id="satellite-img",
+                                            ),
+                                        ]
                                     ),
                                     dl.FeatureGroup(
                                         [dl.EditControl(id="edit_control")]
@@ -178,13 +180,13 @@ app.layout = ddk.App(
 
 
 # Get selected location data from the edit control to the geojson component.
-@app.callback(
-    Output("geojson", "data"),
-    Input("edit_control", "geojson"),
-    prevent_initial_call=True,
-)
-def loc_data(geojson):
-    return geojson
+# @app.callback(
+#     Output("geojson", "data"),
+#     Input("edit_control", "geojson"),
+#     prevent_initial_call=True,
+# )
+# def loc_data(geojson):
+#     return geojson
 
 
 # TODO: Finish and merge with bigger callback
