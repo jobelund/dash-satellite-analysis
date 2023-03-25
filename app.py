@@ -31,172 +31,178 @@ columnDefs = [
     {"field": "dim"},
 ]
 
-app.layout = ddk.App(
-    [
-        ddk.Header(
-            [
-                ddk.Logo(src=app.get_asset_url("plotly_logo.png")),
-                ddk.Title("Land cover analysis and classification"),
-            ]
-        ),
-        ddk.Row(
-            children=[
-                ddk.ControlCard(
-                    width=30,
-                    children=[
-                        ddk.CardHeader(title="Data access"),
-                        dmc.Space(h=30),
-                        ddk.ControlItem(
-                            label="Dim",
-                            children=dcc.Slider(
-                                id="img-dim",
-                                min=0,
-                                max=1,
-                                step=0.1,
-                                value=0.1,
-                                marks=None,
-                                tooltip={
-                                    "placement": "bottom",
-                                    "always_visible": True,
-                                },
+app.layout = dmc.NotificationsProvider(
+    ddk.App(
+        [
+            ddk.Header(
+                [
+                    ddk.Logo(src=app.get_asset_url("plotly_logo.png")),
+                    ddk.Title("Land cover analysis and classification"),
+                ]
+            ),
+            ddk.Row(
+                children=[
+                    ddk.ControlCard(
+                        width=30,
+                        children=[
+                            ddk.CardHeader(title="Data access"),
+                            dmc.Space(h=30),
+                            ddk.ControlItem(
+                                label="Dim",
+                                children=dcc.Slider(
+                                    id="img-dim",
+                                    min=0,
+                                    max=1,
+                                    step=0.1,
+                                    value=0.1,
+                                    marks=None,
+                                    tooltip={
+                                        "placement": "bottom",
+                                        "always_visible": True,
+                                    },
+                                ),
                             ),
-                        ),
-                        ddk.ControlItem(
-                            label="Date",
-                            children=dmc.DatePicker(
-                                id="my-date-picker",
-                                minDate=date(2015, 8, 5),
-                                value=date(2020, 8, 5),
+                            ddk.ControlItem(
+                                label="Date",
+                                children=dmc.DatePicker(
+                                    id="my-date-picker",
+                                    minDate=date(2015, 8, 5),
+                                    value=date(2020, 8, 5),
+                                ),
                             ),
-                        ),
-                        ddk.ControlItem(
-                            label="Latitude",
-                            children=dcc.Input(
-                                id="lat",
-                                min=-90,
-                                max=90,
-                                value=50.23,
-                                type="number",
+                            ddk.ControlItem(
+                                label="Latitude",
+                                children=dcc.Input(
+                                    id="lat",
+                                    min=-90,
+                                    max=90,
+                                    value=50.23,
+                                    type="number",
+                                ),
                             ),
-                        ),
-                        ddk.ControlItem(
-                            label="Longitude",
-                            children=dcc.Input(
-                                id="lon",
-                                min=-180,
-                                max=180,
-                                value=-120,
-                                type="number",
+                            ddk.ControlItem(
+                                label="Longitude",
+                                children=dcc.Input(
+                                    id="lon",
+                                    min=-180,
+                                    max=180,
+                                    value=-120,
+                                    type="number",
+                                ),
                             ),
-                        ),
-                        dmc.Space(h=50),
-                        html.Button("Download image", id="get-data"),
-                    ],
-                    style={"height": "550px"},
-                ),
-                ddk.Block(
-                    style={"margin": "15px"},
-                    width=70,
-                    children=[
-                        html.Div(
-                            dl.Map(
-                                id="map-view",
-                                center=[38.0, -95.0],
-                                zoom=4,
-                                minZoom=2,
-                                children=[
-                                    dl.TileLayer(
-                                        url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
-                                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>',
-                                    ),
-                                    dl.GestureHandling(),
-                                    dl.LayersControl(
-                                        [
-                                            dl.BaseLayer(
-                                                name="Study areas",
-                                                checked=True,
-                                                children=dl.GeoJSON(
-                                                    data=to_geojson(df),
-                                                    id="geojson",
+                            dmc.Space(h=50),
+                            html.Button("Download image", id="get-data"),
+                        ],
+                        style={"height": "550px"},
+                    ),
+                    ddk.Block(
+                        style={"margin": "15px"},
+                        width=70,
+                        children=[
+                            html.Div(
+                                dl.Map(
+                                    id="map-view",
+                                    center=[38.0, -95.0],
+                                    zoom=4,
+                                    minZoom=2,
+                                    children=[
+                                        dl.TileLayer(
+                                            url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+                                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>',
+                                        ),
+                                        dl.GestureHandling(),
+                                        dl.LayersControl(
+                                            [
+                                                dl.BaseLayer(
+                                                    name="Study areas",
+                                                    checked=True,
+                                                    children=dl.GeoJSON(
+                                                        data=to_geojson(df),
+                                                        id="geojson",
+                                                    ),
                                                 ),
+                                                dl.Overlay(
+                                                    name="Satellite image",
+                                                    checked=True,
+                                                    id="satellite-img",
+                                                ),
+                                            ]
+                                        ),
+                                        dl.FeatureGroup(
+                                            [dl.EditControl(id="edit_control")]
+                                        ),
+                                    ],
+                                    style={
+                                        "width": "100%",
+                                        "height": "550px",
+                                        "margin": "auto",
+                                        "display": "block",
+                                    },
+                                )
+                            )
+                        ],
+                    ),
+                ]
+            ),
+            ddk.Card(
+                children=[
+                    ddk.CardHeader(title="Select imagery to view"),
+                    ddk.Row(
+                        [
+                            ddk.Block(
+                                width=80,
+                                children=[
+                                    dmc.LoadingOverlay(
+                                        dag.AgGrid(
+                                            id="image-options",
+                                            columnDefs=columnDefs,
+                                            rowData=df.to_dict("records"),
+                                            columnSize="sizeToFit",
+                                            defaultColDef=dict(
+                                                resizable=True,
                                             ),
-                                            dl.Overlay(
-                                                name="Satellite image",
-                                                checked=True,
-                                                id="satellite-img",
-                                            ),
-                                        ]
-                                    ),
-                                    dl.FeatureGroup(
-                                        [dl.EditControl(id="edit_control")]
+                                            style={"height": "250px"},
+                                        )
                                     ),
                                 ],
-                                style={
-                                    "width": "100%",
-                                    "height": "550px",
-                                    "margin": "auto",
-                                    "display": "block",
-                                },
-                            )
-                        )
-                    ],
-                ),
-            ]
-        ),
-        ddk.Card(
-            children=[
-                ddk.CardHeader(title="Select imagery to view"),
-                ddk.Row(
-                    [
-                        ddk.Block(
-                            width=80,
-                            children=[
-                                dag.AgGrid(
-                                    id="image-options",
-                                    columnDefs=columnDefs,
-                                    rowData=df.to_dict("records"),
-                                    columnSize="sizeToFit",
-                                    defaultColDef=dict(
-                                        resizable=True,
+                            ),
+                            ddk.Block(
+                                width=20,
+                                children=[
+                                    dmc.Center(
+                                        html.Button(
+                                            "Display image",
+                                            id="display",
+                                            style=button_style,
+                                        ),
                                     ),
-                                    style={"height": "250px"},
-                                ),
-                            ],
-                        ),
-                        ddk.Block(
-                            width=20,
-                            children=[
-                                dmc.Center(
-                                    html.Button(
-                                        "Display image",
-                                        id="display",
-                                        style=button_style,
+                                    dmc.Center(
+                                        html.Button(
+                                            "Start analysis",
+                                            id="classify",
+                                            style=button_style,
+                                        ),
                                     ),
-                                ),
-                                dmc.Center(
-                                    html.Button(
-                                        "Start analysis",
-                                        id="classify",
-                                        style=button_style,
+                                    dmc.Center(
+                                        html.Button(
+                                            "Delete selection",
+                                            id="delete",
+                                            style=button_style,
+                                        )
                                     ),
-                                ),
-                                dmc.Center(
-                                    html.Button(
-                                        "Delete selection",
-                                        id="delete",
-                                        style=button_style,
-                                    )
-                                ),
-                            ],
-                        ),
-                    ]
-                ),
-                html.Div(id="delete-div"),
-                html.Div(id="display-div"),
-            ],
-            style={"height": "350px"},
-        ),
-    ]
+                                ],
+                            ),
+                        ]
+                    ),
+                    html.Div(id="delete-div"),
+                    html.Div(id="display-div"),
+                ],
+                style={"height": "350px"},
+            ),
+            html.Div(id="notify-container"),
+        ]
+    ),
+    autoClose=10000,
 )
 
 
@@ -254,7 +260,7 @@ def zoom_map(selection):
 
 
 @app.callback(
-    # Output("satellite-img", "children"),
+    Output("notify-container", "children"),
     Output("image-options", "rowData"),
     Output("geojson", "data"),
     Input("get-data", "n_clicks"),
@@ -266,10 +272,14 @@ def zoom_map(selection):
 )
 def loc_data(n_clicks, date, lat, lon, dim):
     if n_clicks:
-        get_image(lat, lon, dim, date)
+        msg = get_image(lat, lon, dim, date)
         df = update_df()
-        return df.to_dict("records"), to_geojson(df)
-    return dash.no_update, dash.no_update
+        return (
+            dmc.Notification(id="update", action="show", message=msg),
+            df.to_dict("records"),
+            to_geojson(df),
+        )
+    return dash.no_update, dash.no_update, dash.no_update
 
 
 # @app.callback(

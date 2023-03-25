@@ -14,15 +14,14 @@ def get_image(lat, lon, dim, date="2014-02-04"):
     img_metadata = json.loads(requests.get(asset_url).content)
 
     if "msg" in img_metadata.keys():
-        print(img_metadata["msg"])
+        msg = img_metadata["msg"]
         print(asset_url)
-        return None
+        return f"Error retrieving data: {msg}"
     elif "id" in img_metadata.keys():
         img_id = img_metadata["id"]
         if img_id in [x.decode("utf8") for x in redis_instance.keys()]:
-            print("Image already stored in redis. Loading from cache.")
             img = pickle.loads(redis_instance.get(img_id))
-            return img
+            return "Image already stored in redis. Loading from cache."
         else:
             print("Retrieving image data from API...")
             img_data = requests.get(img_url).content
@@ -40,9 +39,7 @@ def get_image(lat, lon, dim, date="2014-02-04"):
             redis_instance.set(f"{img_id}_metadata", pickle.dumps(img_info))
             redis_instance.expire(img_id, REDIS_EXPIRE_SEC)
             redis_instance.expire(f"{img_id}_metadata", REDIS_EXPIRE_SEC)
-
-            print("Image data successfully retrieved and stored in Redis.")
-            return
+            return f"{img_id} successfully retrieved and stored in database."
 
 
 def update_df(df=None):
