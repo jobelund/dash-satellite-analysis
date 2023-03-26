@@ -59,3 +59,8 @@ def to_geojson(df):
     return dlx.dicts_to_geojson(
         df.rename(columns={"id": "tooltip"}).to_dict("records")
     )
+
+
+# TODO
+def classify_image(id, n):
+    return

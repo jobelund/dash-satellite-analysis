@@ -1,7 +1,6 @@
 import dash
 import dash_design_kit as ddk
 from dash import dcc, html, Input, Output, State
-import plotly.express as px
 import dash_leaflet as dl
 from datetime import date
 import dash_mantine_components as dmc
@@ -11,6 +10,7 @@ from utils.data_utils import get_image, update_df, to_geojson
 import warnings
 import pickle
 from constants import redis_instance
+from utils.layout_utils import analysis_modal
 
 # Temporary -- muting pandas warnings for using df.append()
 warnings.simplefilter(action="ignore", category=FutureWarning)
@@ -200,14 +200,50 @@ app.layout = dmc.NotificationsProvider(
                 style={"height": "350px"},
             ),
             html.Div(id="notify-container"),
+            html.Div(id="display-notify"),
+            html.Div(id="analyze-notify"),
+            html.Div(id="delete-notify"),
+            dmc.Modal(
+                title="Configure Image Analysis",
+                id="analyze-modal",
+                size="40%",
+                zIndex=10000,
+                overlayOpacity=0.3,
+            ),
         ]
     ),
-    autoClose=10000,
+    autoClose=5000,
+    position="top-right",
 )
 
 
 @app.callback(
+    Output("analyze-modal", "opened"),
+    Output("analyze-modal", "children"),
+    Output("analyze-notify", "children"),
+    Input("classify", "n_clicks"),
+    State("analyze-modal", "opened"),
+    State("image-options", "selectedRows"),
+)
+def analyze_image_modal(n_clicks, opened, selected):
+    if n_clicks and selected:
+        return not opened, analysis_modal(), dash.no_update
+    if n_clicks and not selected:
+        return (
+            dash.no_update,
+            dash.no_update,
+            dmc.Notification(
+                id="error-display",
+                action="show",
+                message="Please select an image from the table.",
+            ),
+        )
+    return dash.no_update, dash.no_update, dash.no_update
+
+
+@app.callback(
     Output("satellite-img", "children"),
+    Output("display-notify", "children"),
     Input("display", "n_clicks"),
     State("image-options", "selectedRows"),
 )
@@ -232,20 +268,35 @@ def display_image(n_clicks, selection):
                     bounds=image_bounds,
                 )
             ),
+            dash.no_update,
         )
+    elif n_clicks and not selection:
+        return dash.no_update, dmc.Notification(
+            id="error-display",
+            action="show",
+            message="Please select an image from the table.",
+        )
+    return dash.no_update, dash.no_update
 
 
 # TODO: Finish and merge with bigger callback
 @app.callback(
     Output("delete-div", "children"),
+    Output("delete-notify", "children"),
     Input("delete", "n_clicks"),
     State("image-options", "selectedRows"),
 )
 def delete_img(n_clicks, selection):
-    if n_clicks:
+    if n_clicks and selection:
         print(selection)
-        return selection
-    return dash.no_update
+        return selection, dash.no_update
+    elif n_clicks and not selection:
+        return dash.no_update, dmc.Notification(
+            id="error-delete",
+            action="show",
+            message="Please select an image from the table.",
+        )
+    return dash.no_update, dash.no_update
 
 
 @app.callback(
@@ -270,7 +321,7 @@ def zoom_map(selection):
     State("img-dim", "value"),
     prevent_initial_call=True,
 )
-def loc_data(n_clicks, date, lat, lon, dim):
+def retrieve_data(n_clicks, date, lat, lon, dim):
     if n_clicks:
         msg = get_image(lat, lon, dim, date)
         df = update_df()
@@ -280,15 +331,6 @@ def loc_data(n_clicks, date, lat, lon, dim):
             to_geojson(df),
         )
     return dash.no_update, dash.no_update, dash.no_update
-
-
-# @app.callback(
-#     Output("image-options", "rowData"), Input("get-data", "n_clicks")
-# )
-# def get_download_options(nclicks):
-#     if nclicks:
-#         print("get data!")
-#     return dash.no_update
 
 
 if __name__ == "__main__":
