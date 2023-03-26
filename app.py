@@ -6,7 +6,7 @@ from datetime import date
 import dash_mantine_components as dmc
 import dash_ag_grid as dag
 from dash_extensions.javascript import assign
-from utils.data_utils import get_image, update_df, to_geojson
+from utils.data_utils import *
 import warnings
 import pickle
 from constants import redis_instance
@@ -15,7 +15,7 @@ from utils.layout_utils import analysis_modal
 # Temporary -- muting pandas warnings for using df.append()
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
-button_style = {"width": "80%", "margin": "15px"}
+button_style = {"width": "80%", "margin": "5px"}
 
 app = dash.Dash(__name__)
 app.title = "Land cover analysis and classification"
@@ -29,6 +29,7 @@ columnDefs = [
     {"field": "lat"},
     {"field": "lon"},
     {"field": "dim"},
+    {"field": "classified"},
 ]
 
 app.layout = dmc.NotificationsProvider(
@@ -126,6 +127,11 @@ app.layout = dmc.NotificationsProvider(
                                                     checked=True,
                                                     id="satellite-img",
                                                 ),
+                                                dl.Overlay(
+                                                    name="Classified image",
+                                                    checked=True,
+                                                    id="classified-img",
+                                                ),
                                             ]
                                         ),
                                         dl.FeatureGroup(
@@ -171,15 +177,29 @@ app.layout = dmc.NotificationsProvider(
                                 children=[
                                     dmc.Center(
                                         html.Button(
-                                            "Display image",
+                                            "Display on map",
                                             id="display",
                                             style=button_style,
                                         ),
                                     ),
                                     dmc.Center(
                                         html.Button(
-                                            "Start analysis",
+                                            "Crop",
+                                            id="crop",
+                                            style=button_style,
+                                        ),
+                                    ),
+                                    dmc.Center(
+                                        html.Button(
+                                            "Classify",
                                             id="classify",
+                                            style=button_style,
+                                        ),
+                                    ),
+                                    dmc.Center(
+                                        html.Button(
+                                            "View detail",
+                                            id="summary",
                                             style=button_style,
                                         ),
                                     ),
@@ -202,6 +222,7 @@ app.layout = dmc.NotificationsProvider(
             html.Div(id="notify-container"),
             html.Div(id="display-notify"),
             html.Div(id="analyze-notify"),
+            html.Div(id="analyze-run-notify"),
             html.Div(id="delete-notify"),
             dmc.Modal(
                 title="Configure Image Analysis",
@@ -243,6 +264,7 @@ def analyze_image_modal(n_clicks, opened, selected):
 
 @app.callback(
     Output("satellite-img", "children"),
+    Output("classified-img", "children"),
     Output("display-notify", "children"),
     Input("display", "n_clicks"),
     State("image-options", "selectedRows"),
@@ -260,23 +282,43 @@ def display_image(n_clicks, selection):
             [(lat + (dim / 2)), (lon + ((dim / 2)))],
         ]
 
-        return (
-            dl.LayerGroup(
+        layer_img = dl.LayerGroup(
+            dl.ImageOverlay(
+                opacity=0.95,
+                url=img,
+                bounds=image_bounds,
+            )
+        )
+
+        layer_classified = None
+        if redis_instance.exists(f"{img_id}_classified") == 1:
+            img_classified = pickle.loads(
+                redis_instance.get(f"{img_id}_classified")
+            )
+            layer_classified = dl.LayerGroup(
                 dl.ImageOverlay(
                     opacity=0.95,
-                    url=img,
+                    url=img_classified,
                     bounds=image_bounds,
                 )
-            ),
+            )
+
+        return (
+            layer_img,
+            layer_classified,
             dash.no_update,
         )
     elif n_clicks and not selection:
-        return dash.no_update, dmc.Notification(
-            id="error-display",
-            action="show",
-            message="Please select an image from the table.",
+        return (
+            dash.no_update,
+            dash.no_update,
+            dmc.Notification(
+                id="error-display",
+                action="show",
+                message="Please select an image from the table.",
+            ),
         )
-    return dash.no_update, dash.no_update
+    return dash.no_update, dash.no_update, dash.no_update
 
 
 # TODO: Finish and merge with bigger callback
@@ -288,7 +330,6 @@ def display_image(n_clicks, selection):
 )
 def delete_img(n_clicks, selection):
     if n_clicks and selection:
-        print(selection)
         return selection, dash.no_update
     elif n_clicks and not selection:
         return dash.no_update, dmc.Notification(
@@ -331,6 +372,39 @@ def retrieve_data(n_clicks, date, lat, lon, dim):
             to_geojson(df),
         )
     return dash.no_update, dash.no_update, dash.no_update
+
+
+@app.callback(
+    Output("analyze-run-notify", "children"),
+    Input("run-analysis", "n_clicks"),
+    State("image-options", "selectedRows"),
+    State("model-select", "value"),
+    State("n-classes", "value"),
+)
+def run_analysis(n_clicks, selection, model, n_classes):
+    if n_clicks and selection:
+        img_id = selection[0]["id"]
+        img = pickle.loads(redis_instance.get(img_id))
+        image_array = process_img(img)
+        if model == "k-means":
+            segmentation = kmeans_cluster(image_array, n_classes)
+            img_classified = create_colored_mask_image(segmentation, n_classes)
+            img_info = pickle.loads(redis_instance.get(f"{img_id}_metadata"))
+            img_info["classified"] = model
+            redis_instance.set(f"{img_id}_metadata", pickle.dumps(img_info))
+            redis_instance.set(
+                f"{img_id}_classified", pickle.dumps(img_classified)
+            )
+            message = "Image classification successfully completed."
+        else:
+            message = (
+                f"{model} not yet supported. Classification not completed."
+            )
+
+        return dmc.Notification(
+            id="analysis-done", action="show", message=message
+        )
+    return dash.no_update
 
 
 if __name__ == "__main__":

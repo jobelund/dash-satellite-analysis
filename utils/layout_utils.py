@@ -10,8 +10,8 @@ def analysis_modal():
             [
                 dmc.RadioGroup(
                     [dmc.Radio(l, value=k) for k, l in data],
-                    id="radiogroup-simple",
-                    value="react",
+                    id="model-select",
+                    value="k-means",
                     label="Select a classification model",
                     size="sm",
                     mt=10,
@@ -19,6 +19,7 @@ def analysis_modal():
                 dmc.Space(h=30),
                 dmc.NumberInput(
                     label="Number of classes",
+                    id="n-classes",
                     value=5,
                     min=0,
                     step=1,
