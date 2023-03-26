@@ -17,7 +17,7 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 
 button_style = {"width": "80%", "margin": "5px"}
 
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, prevent_initial_callbacks='initial_duplicate')
 app.title = "Land cover analysis and classification"
 server = app.server  # expose server variable for Procfile
 
@@ -30,6 +30,7 @@ columnDefs = [
     {"field": "lon"},
     {"field": "dim"},
     {"field": "classified"},
+    {"field": "n_classes"},
 ]
 
 app.layout = dmc.NotificationsProvider(
@@ -205,7 +206,7 @@ app.layout = dmc.NotificationsProvider(
                                     ),
                                     dmc.Center(
                                         html.Button(
-                                            "Delete selection",
+                                            "Delete",
                                             id="delete",
                                             style=button_style,
                                         )
@@ -239,12 +240,13 @@ app.layout = dmc.NotificationsProvider(
 
 
 @app.callback(
-    Output("analyze-modal", "opened"),
-    Output("analyze-modal", "children"),
+    Output("analyze-modal", "opened", allow_duplicate=True),
+    Output("analyze-modal", "children", allow_duplicate=True),
     Output("analyze-notify", "children"),
     Input("classify", "n_clicks"),
     State("analyze-modal", "opened"),
     State("image-options", "selectedRows"),
+    prevent_initial_call=True,
 )
 def analyze_image_modal(n_clicks, opened, selected):
     if n_clicks and selected:
@@ -321,16 +323,24 @@ def display_image(n_clicks, selection):
     return dash.no_update, dash.no_update, dash.no_update
 
 
-# TODO: Finish and merge with bigger callback
 @app.callback(
-    Output("delete-div", "children"),
+    Output("image-options", "rowData", allow_duplicate=True),
     Output("delete-notify", "children"),
     Input("delete", "n_clicks"),
     State("image-options", "selectedRows"),
+    prevent_initial_callback=True
 )
 def delete_img(n_clicks, selection):
     if n_clicks and selection:
-        return selection, dash.no_update
+        img_id = selection[0]["id"]
+        for key in [img_id, f"{img_id}_metadata", f"{img_id}_classified"]:
+            if redis_instance.exists(key) == 1:
+                redis_instance.delete(key)
+        return update_df().to_dict('records'), dmc.Notification(
+            id="error-delete",
+            action="show",
+            message=f"{img_id} successfully deleted.",
+        )
     elif n_clicks and not selection:
         return dash.no_update, dmc.Notification(
             id="error-delete",
@@ -353,7 +363,7 @@ def zoom_map(selection):
 
 @app.callback(
     Output("notify-container", "children"),
-    Output("image-options", "rowData"),
+    Output("image-options", "rowData", allow_duplicate=True),
     Output("geojson", "data"),
     Input("get-data", "n_clicks"),
     State("my-date-picker", "value"),
@@ -376,12 +386,16 @@ def retrieve_data(n_clicks, date, lat, lon, dim):
 
 @app.callback(
     Output("analyze-run-notify", "children"),
+    Output("analyze-modal", "opened", allow_duplicate=True),
+    Output("image-options", "rowData", allow_duplicate=True),
     Input("run-analysis", "n_clicks"),
     State("image-options", "selectedRows"),
     State("model-select", "value"),
     State("n-classes", "value"),
+    State("analyze-modal", "opened"),
+    prevent_initial_call=True,
 )
-def run_analysis(n_clicks, selection, model, n_classes):
+def run_analysis(n_clicks, selection, model, n_classes, opened):
     if n_clicks and selection:
         img_id = selection[0]["id"]
         img = pickle.loads(redis_instance.get(img_id))
@@ -391,6 +405,7 @@ def run_analysis(n_clicks, selection, model, n_classes):
             img_classified = create_colored_mask_image(segmentation, n_classes)
             img_info = pickle.loads(redis_instance.get(f"{img_id}_metadata"))
             img_info["classified"] = model
+            img_info["n_classes"] = n_classes
             redis_instance.set(f"{img_id}_metadata", pickle.dumps(img_info))
             redis_instance.set(
                 f"{img_id}_classified", pickle.dumps(img_classified)
@@ -401,10 +416,14 @@ def run_analysis(n_clicks, selection, model, n_classes):
                 f"{model} not yet supported. Classification not completed."
             )
 
-        return dmc.Notification(
-            id="analysis-done", action="show", message=message
+        return (
+            dmc.Notification(
+                id="analysis-done", action="show", message=message
+            ),
+            not opened,
+            update_df().to_dict("records"),
         )
-    return dash.no_update
+    return dash.no_update, dash.no_update, dash.no_update
 
 
 if __name__ == "__main__":

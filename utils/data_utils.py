@@ -48,7 +48,17 @@ def get_image(lat, lon, dim, date="2014-02-04"):
 
 def update_df(df=None):
     df = (
-        pd.DataFrame(columns=["id", "date", "lat", "lon", "dim"])
+        pd.DataFrame(
+            columns=[
+                "id",
+                "date",
+                "lat",
+                "lon",
+                "dim",
+                "classified",
+                "n_classes",
+            ]
+        )
         if not df
         else df
     )
