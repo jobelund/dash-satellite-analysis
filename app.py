@@ -325,6 +325,7 @@ def display_image(n_clicks, selection):
 
 @app.callback(
     Output("image-options", "rowData", allow_duplicate=True),
+    Output("geojson", "data", allow_duplicate=True),
     Output("delete-notify", "children"),
     Input("delete", "n_clicks"),
     State("image-options", "selectedRows"),
@@ -336,18 +337,19 @@ def delete_img(n_clicks, selection):
         for key in [img_id, f"{img_id}_metadata", f"{img_id}_classified"]:
             if redis_instance.exists(key) == 1:
                 redis_instance.delete(key)
-        return update_df().to_dict('records'), dmc.Notification(
+        df = update_df()
+        return df.to_dict('records'), to_geojson(df), dmc.Notification(
             id="error-delete",
             action="show",
             message=f"{img_id} successfully deleted.",
         )
     elif n_clicks and not selection:
-        return dash.no_update, dmc.Notification(
+        return dash.no_update, dash.no_update, dmc.Notification(
             id="error-delete",
             action="show",
             message="Please select an image from the table.",
         )
-    return dash.no_update, dash.no_update
+    return dash.no_update, dash.no_update, dash.no_update
 
 
 @app.callback(
@@ -364,7 +366,7 @@ def zoom_map(selection):
 @app.callback(
     Output("notify-container", "children"),
     Output("image-options", "rowData", allow_duplicate=True),
-    Output("geojson", "data"),
+    Output("geojson", "data", allow_duplicate=True),
     Input("get-data", "n_clicks"),
     State("my-date-picker", "value"),
     State("lat", "value"),
