@@ -8,7 +8,8 @@ load_dotenv()
 BUTTON_STYLE = {"width": "80%", "margin-top": "10px"}
 
 COLUMN_DEFS = [
-    {"field": "id", "checkboxSelection": True},
+    {"field": "name", "checkboxSelection": True},
+    {"field": "id"},
     {"field": "date"},
     {"field": "lat"},
     {"field": "lon"},

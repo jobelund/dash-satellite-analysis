@@ -150,6 +150,7 @@ def modal_details(n_clicks, opened, selected):
     return dash.no_update, dash.no_update, dash.no_update
 
 
+# TODO: Somewhat buggy - maybe have display always on when a row is selected?
 @app.callback(
     Output("satellite-img", "children"),
     Output("classified-img", "children"),
@@ -313,11 +314,12 @@ def map_zoom(selection):
     State("lat", "value"),
     State("lon", "value"),
     State("img-dim", "value"),
+    State("name", "value"),
     prevent_initial_call=True,
 )
-def data_retrieve(n_clicks, date, lat, lon, dim):
+def data_retrieve(n_clicks, date, lat, lon, dim, name):
     if n_clicks:
-        msg = get_image(lat, lon, dim, date)
+        msg = get_image(lat, lon, dim, name, date)
         df = update_df()
         return (
             dmc.Notification(id="update", action="show", message=msg),

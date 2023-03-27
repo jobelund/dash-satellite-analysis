@@ -1,6 +1,7 @@
 import plotly.graph_objects as go
 
 
+# TODO: Color of classes in chart to match color on the map
 def create_class_distribution_pie_chart(class_proportions):
     """
     Creates a pie chart showing the distribution of pixels in each cluster.

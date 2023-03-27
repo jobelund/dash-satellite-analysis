@@ -12,7 +12,7 @@ from PIL import Image
 import plotly.express as px
 
 
-def get_image(lat, lon, dim, date="2014-02-04"):
+def get_image(lat, lon, dim, name, date="2014-02-04"):
     img_url = f"https://api.nasa.gov/planetary/earth/imagery?lon={lon}&lat={lat}&date={date}&dim={dim}&api_key={NASA_KEY}"
     asset_url = f"https://api.nasa.gov/planetary/earth/assets?lon={lon}&lat={lat}&date={date}&dim={dim}&api_key={NASA_KEY}"
     img_metadata = json.loads(requests.get(asset_url).content)
@@ -32,6 +32,7 @@ def get_image(lat, lon, dim, date="2014-02-04"):
             image_bytes = io.BytesIO(img_data)
             img = PIL.Image.open(image_bytes)
             img_info = {
+                "name": name,
                 "lat": lat,
                 "lon": lon,
                 "dim": dim,
@@ -50,6 +51,7 @@ def update_df(df=None):
     df = (
         pd.DataFrame(
             columns=[
+                "name",
                 "id",
                 "date",
                 "lat",
@@ -72,7 +74,7 @@ def update_df(df=None):
 
 def to_geojson(df):
     return dlx.dicts_to_geojson(
-        df.rename(columns={"id": "tooltip"}).to_dict("records")
+        df.rename(columns={"name": "tooltip"}).to_dict("records")
     )
 
 
@@ -117,7 +119,7 @@ def calculate_class_proportions(segmentation, n_clusters):
         class_counts[i] = np.sum(segmentation == i)
 
     class_proportions = class_counts / total_pixels
-    return class_proportions
+    return np.round(class_proportions, 3)
 
 
 def create_colored_mask_image(segmentation, n_clusters):
