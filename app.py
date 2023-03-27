@@ -92,7 +92,6 @@ app.layout = dmc.NotificationsProvider(
     Input("classify", "n_clicks"),
     State("analyze-modal", "opened"),
     State("image-options", "selectedRows"),
-    prevent_initial_call=True,
 )
 def modal_classify(n_clicks, opened, selected):
     if n_clicks and selected:
@@ -117,7 +116,6 @@ def modal_classify(n_clicks, opened, selected):
     Input("investigate", "n_clicks"),
     State("details-modal", "opened"),
     State("image-options", "selectedRows"),
-    prevent_initial_call=True,
 )
 def modal_details(n_clicks, opened, selected):
     if n_clicks and selected:
@@ -231,7 +229,6 @@ def img_display(n_clicks, selection):
     Output("delete-notify", "children"),
     Input("delete", "n_clicks"),
     State("image-options", "selectedRows"),
-    prevent_initial_callback=True,
 )
 def img_delete(n_clicks, selection):
     if n_clicks and selection:
@@ -271,7 +268,6 @@ def img_delete(n_clicks, selection):
     State("model-select", "value"),
     State("n-classes", "value"),
     State("analyze-modal", "opened"),
-    prevent_initial_call=True,
 )
 def img_classify(n_clicks, selection, model, n_classes, opened):
     if n_clicks and selection:
@@ -334,7 +330,6 @@ def map_zoom(selection):
     State("lon", "value"),
     State("img-dim", "value"),
     State("name", "value"),
-    prevent_initial_call=True,
 )
 def data_retrieve(n_clicks, date, lat, lon, dim, name):
     if n_clicks:
