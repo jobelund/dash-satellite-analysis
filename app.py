@@ -10,6 +10,7 @@ from constants import redis_instance, PANEL_HEIGHT
 from utils.layout_utils import (
     analysis_modal,
     details_modal,
+    layout,
     notify_divs,
     button_toolkit,
     leaflet_map,
@@ -33,8 +34,6 @@ app = dash.Dash(__name__, prevent_initial_callbacks="initial_duplicate")
 app.title = "Land cover analysis and classification"
 server = app.server  # expose server variable for Procfile
 
-df = update_df()
-
 app.layout = dmc.NotificationsProvider(
     ddk.App(
         children=[
@@ -47,42 +46,7 @@ app.layout = dmc.NotificationsProvider(
             ),
             html.Div(
                 id="content",
-                children=[
-                    ddk.Row(
-                        children=[
-                            download_controls(),
-                            leaflet_map(df),
-                        ]
-                    ),
-                    ddk.Card(
-                        children=[
-                            ddk.CardHeader(title="Select imagery to view"),
-                            ddk.Row(
-                                [
-                                    image_table(df),
-                                    button_toolkit(),
-                                ]
-                            ),
-                        ],
-                        style={"height": PANEL_HEIGHT},
-                    ),
-                    html.Div(children=notify_divs()),
-                    dmc.Modal(
-                        title="Configure Image Analysis",
-                        id="analyze-modal",
-                        size="40%",
-                        zIndex=10000,
-                        overlayOpacity=0.3,
-                    ),
-                    dmc.Modal(
-                        title="Image details",
-                        children=details_modal([1, 2, 3]),
-                        id="details-modal",
-                        size="40%",
-                        zIndex=10000,
-                        overlayOpacity=0.3,
-                    ),
-                ],
+                children=layout()
             ),
         ]
     ),
@@ -91,13 +55,12 @@ app.layout = dmc.NotificationsProvider(
 )
 
 
-# @app.callback(
-#         Output('content', 'children'),
-#         Input('url', 'pathname')
-# )
-# def load_layout(url):
-#     print('triggered')
-#     return dash.no_update
+@app.callback(
+        Output('content', 'children'),
+        Input('url', 'pathname')
+)
+def load_layout(url):
+    return layout()
 
 
 @app.callback(

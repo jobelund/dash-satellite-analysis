@@ -5,8 +5,14 @@ import dash_leaflet as dl
 import dash_ag_grid as dag
 from datetime import date
 from utils.chart_utils import create_class_distribution_pie_chart
-from utils.data_utils import to_geojson
-from constants import BUTTON_STYLE, COLUMN_DEFS, MAP_HEIGHT, GRID_HEIGHT
+from utils.data_utils import to_geojson, update_df
+from constants import (
+    BUTTON_STYLE,
+    COLUMN_DEFS,
+    MAP_HEIGHT,
+    GRID_HEIGHT,
+    PANEL_HEIGHT,
+)
 
 
 def analysis_modal():
@@ -205,3 +211,44 @@ def download_controls():
         ],
         style={"height": MAP_HEIGHT},
     )
+
+
+def layout():
+    df = update_df()
+    layout = [
+        ddk.Row(
+            children=[
+                download_controls(),
+                leaflet_map(df),
+            ]
+        ),
+        ddk.Card(
+            children=[
+                ddk.CardHeader(title="Select imagery to view"),
+                ddk.Row(
+                    [
+                        image_table(df),
+                        button_toolkit(),
+                    ]
+                ),
+            ],
+            style={"height": PANEL_HEIGHT},
+        ),
+        html.Div(children=notify_divs()),
+        dmc.Modal(
+            title="Configure Image Analysis",
+            id="analyze-modal",
+            size="40%",
+            zIndex=10000,
+            overlayOpacity=0.3,
+        ),
+        dmc.Modal(
+            title="Image details",
+            children=details_modal([1, 2, 3]),
+            id="details-modal",
+            size="40%",
+            zIndex=10000,
+            overlayOpacity=0.3,
+        ),
+    ]
+    return layout
