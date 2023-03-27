@@ -1,3 +1,7 @@
 .control--label {
     padding-bottom: 0px !important;
 }
+
+.ddk-container .control.label--top.label--text--left, .ddk-container .control.label--bottom.label--text--left {
+    padding: 4px !important;
+}

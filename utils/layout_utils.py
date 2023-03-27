@@ -6,7 +6,7 @@ import dash_ag_grid as dag
 from datetime import date
 from utils.chart_utils import create_class_distribution_pie_chart
 from utils.data_utils import to_geojson
-from constants import BUTTON_STYLE, COLUMN_DEFS
+from constants import BUTTON_STYLE, COLUMN_DEFS, MAP_HEIGHT, GRID_HEIGHT
 
 
 def analysis_modal():
@@ -97,12 +97,12 @@ def leaflet_map(df):
                             dl.Overlay(
                                 name="Satellite image",
                                 checked=True,
-                                id="satellite-img",
+                                children=dl.LayerGroup(id="satellite-img"),
                             ),
                             dl.Overlay(
                                 name="Classified image",
                                 checked=True,
-                                id="classified-img",
+                                children=dl.LayerGroup(id="classified-img"),
                             ),
                         ]
                     ),
@@ -110,7 +110,7 @@ def leaflet_map(df):
                 ],
                 style={
                     "width": "100%",
-                    "height": "500px",
+                    "height": MAP_HEIGHT,
                     "margin": "auto",
                     "display": "block",
                 },
@@ -126,14 +126,17 @@ def image_table(df):
             dmc.LoadingOverlay(
                 dag.AgGrid(
                     id="image-options",
+                    className="ag-theme-material",
                     columnDefs=COLUMN_DEFS,
                     rowData=df.to_dict("records"),
                     columnSize="sizeToFit",
-                    defaultColDef=dict(
-                        resizable=True,
-                    ),
+                    defaultColDef={
+                        "resizable": True,
+                        "sortable": True,
+                        "filter": True,
+                    },
                     dashGridOptions={"rowSelection": "single"},
-                    style={"height": "225px", "margin": "10px"},
+                    style={"height": GRID_HEIGHT, "margin": "10px"},
                 )
             ),
         ],
@@ -194,7 +197,11 @@ def download_controls():
                     type="text", id="name", placeholder="Image name..."
                 ),
             ),
-            html.Button("Download image", id="get-data"),
+            dmc.Center(
+                html.Button(
+                    "Download image", id="get-data", style=BUTTON_STYLE
+                )
+            ),
         ],
-        style={"height": "500px"},
+        style={"height": MAP_HEIGHT},
     )

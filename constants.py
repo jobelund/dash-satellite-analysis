@@ -5,7 +5,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-BUTTON_STYLE = {"width": "80%", "margin-top": "10px"}
+BUTTON_STYLE = {
+    "width": "80%",
+    "margin-top": "10px",
+    "backgroundColor": "rgb(28, 126, 214)",
+    "color": "white",
+    "border": "0px",
+    "borderRadius": "5px",
+}
+
+MAP_HEIGHT = "475px"
+GRID_HEIGHT = "250px"
+PANEL_HEIGHT = "325px"
 
 COLUMN_DEFS = [
     {"field": "name", "checkboxSelection": True},
