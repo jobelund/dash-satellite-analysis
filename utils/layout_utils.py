@@ -41,13 +41,9 @@ def analysis_modal():
     return layout
 
 
-def details_modal(class_proportions):
-    pie = create_class_distribution_pie_chart(class_proportions)
-    layout = dmc.Center(
-        html.Div(
-            dcc.Graph(figure=pie, style={"height": "200px", "width": "200px"})
-        )
-    )
+def details_modal(class_proportions, class_colors=None):
+    pie = create_class_distribution_pie_chart(class_proportions, class_colors)
+    layout = dmc.Center(html.Div(dcc.Graph(figure=pie)))
     return layout
 
 
@@ -136,6 +132,7 @@ def image_table(df):
                     defaultColDef=dict(
                         resizable=True,
                     ),
+                    dashGridOptions={"rowSelection": "single"},
                     style={"height": "225px", "margin": "10px"},
                 )
             ),

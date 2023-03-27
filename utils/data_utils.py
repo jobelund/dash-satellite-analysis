@@ -1,9 +1,5 @@
-import requests
-import PIL
-import io
-import pickle
+import requests, PIL, io, json, pickle, cv2
 from constants import redis_instance, REDIS_EXPIRE_SEC, NASA_KEY
-import json
 import pandas as pd
 import dash_leaflet.express as dlx
 from sklearn import cluster
@@ -17,7 +13,7 @@ def get_image(lat, lon, dim, name, date="2014-02-04"):
     asset_url = f"https://api.nasa.gov/planetary/earth/assets?lon={lon}&lat={lat}&date={date}&dim={dim}&api_key={NASA_KEY}"
     img_metadata = json.loads(requests.get(asset_url).content)
 
-    if "msg" in img_metadata.keys():
+    if any(key in img_metadata for key in ["msg", "error"]):
         msg = img_metadata["msg"]
         print(asset_url)
         return f"Error retrieving data: {msg}"
@@ -31,6 +27,7 @@ def get_image(lat, lon, dim, name, date="2014-02-04"):
             img_data = requests.get(img_url).content
             image_bytes = io.BytesIO(img_data)
             img = PIL.Image.open(image_bytes)
+            img = enhance_image(img)
             img_info = {
                 "name": name,
                 "lat": lat,
@@ -164,10 +161,12 @@ def create_colored_mask_image(segmentation, n_clusters):
         (segmentation.shape[0], segmentation.shape[1], 3), dtype=np.uint8
     )
 
+    class_colors = []
     for i, color in enumerate(interpolated_colors):
         colored_mask[segmentation == i] = color
+        class_colors.append(color)
 
-    return Image.fromarray(colored_mask)
+    return Image.fromarray(colored_mask), class_colors
 
 
 def process_img(image, resize=(256, 256)):
@@ -186,3 +185,35 @@ def process_img(image, resize=(256, 256)):
     # Convert the image to a numpy array and normalize its values
     img_array = np.array(image).astype(np.float32) / 255
     return img_array
+
+
+def enhance_image(image, clip_limit=3.1):
+    """
+    Enhances the contrast of a PIL image using the CLAHE algorithm.
+
+    Args:
+        image (PIL.Image.Image): The input RGB image to enhance.
+        clip_limit (float, optional): The CLAHE clip limit. Defaults to 3.1.
+
+    Returns:
+        PIL.Image.Image: A new PIL image with enhanced contrast.
+
+    """
+    img_array = np.array(image)
+
+    # Convert to LAB color space
+    lab = cv2.cvtColor(img_array, cv2.COLOR_RGB2LAB)
+
+    # Split into channels
+    l, a, b = cv2.split(lab)
+
+    # Apply histogram equalization to the L channel
+    clahe = cv2.createCLAHE(clip_limit, tileGridSize=(10, 10))
+    cl = clahe.apply(l)
+
+    # Merge the channels back into the LAB image
+    lab = cv2.merge((cl, a, b))
+
+    # Convert back to RGB color space
+    enhanced_image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
+    return Image.fromarray(enhanced_image)
