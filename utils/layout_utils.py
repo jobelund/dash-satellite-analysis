@@ -44,3 +44,8 @@ def details_modal(class_proportions):
         )
     )
     return layout
+
+
+def notify_divs():
+    items = ['data', 'display', 'analyze', 'analyze-run', 'investigate', 'delete']
+    return [html.Div(id=f"{item}-notify") for item in items]

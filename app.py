@@ -5,34 +5,29 @@ import dash_leaflet as dl
 from datetime import date
 import dash_mantine_components as dmc
 import dash_ag_grid as dag
-from dash_extensions.javascript import assign
-from utils.data_utils import *
 import warnings
 import pickle
-from constants import redis_instance
-from utils.layout_utils import analysis_modal, details_modal
+
+from constants import redis_instance, BUTTON_STYLE, COLUMN_DEFS
+from utils.layout_utils import analysis_modal, details_modal, notify_divs
+from utils.data_utils import (
+    update_df,
+    get_image,
+    to_geojson,
+    kmeans_cluster,
+    calculate_class_proportions,
+    create_colored_mask_image,
+    process_img,
+)
 
 # Temporary -- muting pandas warnings for using df.append()
 warnings.simplefilter(action="ignore", category=FutureWarning)
-
-button_style = {"width": "80%", "margin": "5px"}
 
 app = dash.Dash(__name__, prevent_initial_callbacks="initial_duplicate")
 app.title = "Land cover analysis and classification"
 server = app.server  # expose server variable for Procfile
 
 df = update_df()
-
-columnDefs = [
-    {"field": "id", "checkboxSelection": True},
-    {"field": "date"},
-    {"field": "lat"},
-    {"field": "lon"},
-    {"field": "dim"},
-    {"field": "classified"},
-    {"field": "n classes"},
-    {"field": "class distribution"},
-]
 
 app.layout = dmc.NotificationsProvider(
     ddk.App(
@@ -163,7 +158,7 @@ app.layout = dmc.NotificationsProvider(
                                     dmc.LoadingOverlay(
                                         dag.AgGrid(
                                             id="image-options",
-                                            columnDefs=columnDefs,
+                                            columnDefs=COLUMN_DEFS,
                                             rowData=df.to_dict("records"),
                                             columnSize="sizeToFit",
                                             defaultColDef=dict(
@@ -181,35 +176,35 @@ app.layout = dmc.NotificationsProvider(
                                         html.Button(
                                             "Display",
                                             id="display",
-                                            style=button_style,
+                                            style=BUTTON_STYLE,
                                         ),
                                     ),
                                     dmc.Center(
                                         html.Button(
                                             "Crop",
                                             id="crop",
-                                            style=button_style,
+                                            style=BUTTON_STYLE,
                                         ),
                                     ),
                                     dmc.Center(
                                         html.Button(
                                             "Classify",
                                             id="classify",
-                                            style=button_style,
+                                            style=BUTTON_STYLE,
                                         ),
                                     ),
                                     dmc.Center(
                                         html.Button(
                                             "Investigate",
                                             id="investigate",
-                                            style=button_style,
+                                            style=BUTTON_STYLE,
                                         ),
                                     ),
                                     dmc.Center(
                                         html.Button(
                                             "Delete",
                                             id="delete",
-                                            style=button_style,
+                                            style=BUTTON_STYLE,
                                         )
                                     ),
                                 ],
@@ -219,12 +214,7 @@ app.layout = dmc.NotificationsProvider(
                 ],
                 style={"height": "350px"},
             ),
-            html.Div(id="notify-container"),
-            html.Div(id="display-notify"),
-            html.Div(id="analyze-notify"),
-            html.Div(id="analyze-run-notify"),
-            html.Div(id="investigate-notify"),
-            html.Div(id="delete-notify"),
+            html.Div(children=notify_divs()),
             dmc.Modal(
                 title="Configure Image Analysis",
                 id="analyze-modal",
@@ -418,7 +408,7 @@ def zoom_map(selection):
 
 
 @app.callback(
-    Output("notify-container", "children"),
+    Output("data-notify", "children"),
     Output("image-options", "rowData", allow_duplicate=True),
     Output("geojson", "data", allow_duplicate=True),
     Input("get-data", "n_clicks"),
