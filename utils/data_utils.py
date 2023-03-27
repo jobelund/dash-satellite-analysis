@@ -56,7 +56,8 @@ def update_df(df=None):
                 "lon",
                 "dim",
                 "classified",
-                "n_classes",
+                "n classes",
+                "class distribution",
             ]
         )
         if not df

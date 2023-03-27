@@ -10,14 +10,14 @@ from utils.data_utils import *
 import warnings
 import pickle
 from constants import redis_instance
-from utils.layout_utils import analysis_modal
+from utils.layout_utils import analysis_modal, details_modal
 
 # Temporary -- muting pandas warnings for using df.append()
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
 button_style = {"width": "80%", "margin": "5px"}
 
-app = dash.Dash(__name__, prevent_initial_callbacks='initial_duplicate')
+app = dash.Dash(__name__, prevent_initial_callbacks="initial_duplicate")
 app.title = "Land cover analysis and classification"
 server = app.server  # expose server variable for Procfile
 
@@ -30,7 +30,8 @@ columnDefs = [
     {"field": "lon"},
     {"field": "dim"},
     {"field": "classified"},
-    {"field": "n_classes"},
+    {"field": "n classes"},
+    {"field": "class distribution"},
 ]
 
 app.layout = dmc.NotificationsProvider(
@@ -178,7 +179,7 @@ app.layout = dmc.NotificationsProvider(
                                 children=[
                                     dmc.Center(
                                         html.Button(
-                                            "Display on map",
+                                            "Display",
                                             id="display",
                                             style=button_style,
                                         ),
@@ -199,8 +200,8 @@ app.layout = dmc.NotificationsProvider(
                                     ),
                                     dmc.Center(
                                         html.Button(
-                                            "View detail",
-                                            id="summary",
+                                            "Investigate",
+                                            id="investigate",
                                             style=button_style,
                                         ),
                                     ),
@@ -215,8 +216,6 @@ app.layout = dmc.NotificationsProvider(
                             ),
                         ]
                     ),
-                    html.Div(id="delete-div"),
-                    html.Div(id="display-div"),
                 ],
                 style={"height": "350px"},
             ),
@@ -224,10 +223,18 @@ app.layout = dmc.NotificationsProvider(
             html.Div(id="display-notify"),
             html.Div(id="analyze-notify"),
             html.Div(id="analyze-run-notify"),
+            html.Div(id="investigate-notify"),
             html.Div(id="delete-notify"),
             dmc.Modal(
                 title="Configure Image Analysis",
                 id="analyze-modal",
+                size="40%",
+                zIndex=10000,
+                overlayOpacity=0.3,
+            ),
+            dmc.Modal(
+                title="Image details",
+                id="details-modal",
                 size="40%",
                 zIndex=10000,
                 overlayOpacity=0.3,
@@ -256,9 +263,48 @@ def analyze_image_modal(n_clicks, opened, selected):
             dash.no_update,
             dash.no_update,
             dmc.Notification(
-                id="error-display",
+                id="classify-notfication",
                 action="show",
-                message="Please select an image from the table.",
+                message="Can't classify. Please select an image from the table.",
+            ),
+        )
+    return dash.no_update, dash.no_update, dash.no_update
+
+
+@app.callback(
+    Output("details-modal", "opened"),
+    Output("details-modal", "children"),
+    Output("investigate-notify", "children"),
+    Input("investigate", "n_clicks"),
+    State("details-modal", "opened"),
+    State("image-options", "selectedRows"),
+    prevent_initial_call=True,
+)
+def display_details_modal(n_clicks, opened, selected):
+    if n_clicks and selected:
+        img_id = selected[0]["id"]
+        if redis_instance.exists(f"{img_id}_classified") == 1:
+            class_proportions = selected[0]["class distribution"]
+            return not opened, details_modal(class_proportions), dash.no_update
+        else:
+            return (
+                dash.no_update,
+                dash.no_update,
+                dmc.Notification(
+                    id="investigate-notfication",
+                    action="show",
+                    message="Can't investigate. Please classify image.",
+                ),
+            )
+
+    elif n_clicks and not selected:
+        return (
+            dash.no_update,
+            dash.no_update,
+            dmc.Notification(
+                id="investigate-notfication",
+                action="show",
+                message="Can't investigate. Please select an image from the table.",
             ),
         )
     return dash.no_update, dash.no_update, dash.no_update
@@ -315,9 +361,9 @@ def display_image(n_clicks, selection):
             dash.no_update,
             dash.no_update,
             dmc.Notification(
-                id="error-display",
+                id="display-notfication",
                 action="show",
-                message="Please select an image from the table.",
+                message="Can't display. Please select an image from the table.",
             ),
         )
     return dash.no_update, dash.no_update, dash.no_update
@@ -329,7 +375,7 @@ def display_image(n_clicks, selection):
     Output("delete-notify", "children"),
     Input("delete", "n_clicks"),
     State("image-options", "selectedRows"),
-    prevent_initial_callback=True
+    prevent_initial_callback=True,
 )
 def delete_img(n_clicks, selection):
     if n_clicks and selection:
@@ -338,16 +384,24 @@ def delete_img(n_clicks, selection):
             if redis_instance.exists(key) == 1:
                 redis_instance.delete(key)
         df = update_df()
-        return df.to_dict('records'), to_geojson(df), dmc.Notification(
-            id="error-delete",
-            action="show",
-            message=f"{img_id} successfully deleted.",
+        return (
+            df.to_dict("records"),
+            to_geojson(df),
+            dmc.Notification(
+                id="delete-notfication",
+                action="show",
+                message=f"{img_id} successfully deleted.",
+            ),
         )
     elif n_clicks and not selection:
-        return dash.no_update, dash.no_update, dmc.Notification(
-            id="error-delete",
-            action="show",
-            message="Please select an image from the table.",
+        return (
+            dash.no_update,
+            dash.no_update,
+            dmc.Notification(
+                id="delete-notfication",
+                action="show",
+                message="Can't delete. Please select an image from the table.",
+            ),
         )
     return dash.no_update, dash.no_update, dash.no_update
 
@@ -404,10 +458,14 @@ def run_analysis(n_clicks, selection, model, n_classes, opened):
         image_array = process_img(img)
         if model == "k-means":
             segmentation = kmeans_cluster(image_array, n_classes)
+            class_proportions = calculate_class_proportions(
+                segmentation, n_classes
+            )
             img_classified = create_colored_mask_image(segmentation, n_classes)
             img_info = pickle.loads(redis_instance.get(f"{img_id}_metadata"))
             img_info["classified"] = model
-            img_info["n_classes"] = n_classes
+            img_info["n classes"] = n_classes
+            img_info["class distribution"] = class_proportions
             redis_instance.set(f"{img_id}_metadata", pickle.dumps(img_info))
             redis_instance.set(
                 f"{img_id}_classified", pickle.dumps(img_classified)

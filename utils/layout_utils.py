@@ -1,6 +1,7 @@
 import dash_mantine_components as dmc
 import dash_design_kit as ddk
 from dash import dcc, html
+from utils.chart_utils import create_class_distribution_pie_chart
 
 
 def analysis_modal():
@@ -30,6 +31,16 @@ def analysis_modal():
                     dmc.Button("Run classification", id="run-analysis")
                 ),
             ]
+        )
+    )
+    return layout
+
+
+def details_modal(class_proportions):
+    pie = create_class_distribution_pie_chart(class_proportions)
+    layout = dmc.Center(
+        html.Div(
+            dcc.Graph(figure=pie, style={"height": "200px", "width": "200px"})
         )
     )
     return layout
