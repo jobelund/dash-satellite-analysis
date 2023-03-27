@@ -75,7 +75,7 @@ def button_toolkit():
 def leaflet_map(df):
     return ddk.Block(
         style={"margin": "10px"},
-        width=85,
+        width=80,
         children=html.Div(
             dl.Map(
                 id="map-view",
@@ -114,7 +114,7 @@ def leaflet_map(df):
                 ],
                 style={
                     "width": "100%",
-                    "height": "550px",
+                    "height": "500px",
                     "margin": "auto",
                     "display": "block",
                 },
@@ -136,7 +136,7 @@ def image_table(df):
                     defaultColDef=dict(
                         resizable=True,
                     ),
-                    style={"height": "200px", "margin": "10px"},
+                    style={"height": "225px", "margin": "10px"},
                 )
             ),
         ],
@@ -145,10 +145,9 @@ def image_table(df):
 
 def download_controls():
     return ddk.ControlCard(
-        width=15,
+        width=20,
         children=[
             ddk.CardHeader(title="Data access"),
-            dmc.Space(h=30),
             ddk.ControlItem(
                 label="Dim",
                 children=dcc.Slider(
@@ -192,8 +191,13 @@ def download_controls():
                     type="number",
                 ),
             ),
-            dmc.Space(h=50),
+            ddk.ControlItem(
+                label="Name",
+                children=dcc.Input(
+                    type="text", id="name", placeholder="Image name..."
+                ),
+            ),
             html.Button("Download image", id="get-data"),
         ],
-        style={"height": "550px"},
+        style={"height": "500px"},
     )

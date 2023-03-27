@@ -62,7 +62,7 @@ app.layout = dmc.NotificationsProvider(
                         ]
                     ),
                 ],
-                style={"height": "285px"},
+                style={"height": "300px"},
             ),
             html.Div(children=notify_divs()),
             dmc.Modal(
@@ -209,6 +209,7 @@ def img_display(n_clicks, selection):
     return dash.no_update, dash.no_update, dash.no_update
 
 
+# TODO: Delete image from map as well!
 @app.callback(
     Output("image-options", "rowData", allow_duplicate=True),
     Output("geojson", "data", allow_duplicate=True),

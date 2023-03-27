@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-BUTTON_STYLE = {"width": "70%", "margin": "2.5px"}
+BUTTON_STYLE = {"width": "80%", "margin-top": "10px"}
 
 COLUMN_DEFS = [
     {"field": "id", "checkboxSelection": True},
