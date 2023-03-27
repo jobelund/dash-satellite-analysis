@@ -106,7 +106,7 @@ def leaflet_map(df):
                             ),
                         ]
                     ),
-                    dl.FeatureGroup([dl.EditControl(id="edit_control")]),
+                    dl.FeatureGroup([dl.EditControl(id="edit-control")]),
                 ],
                 style={
                     "width": "100%",

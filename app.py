@@ -101,6 +101,18 @@ app.layout = dmc.NotificationsProvider(
 
 
 @app.callback(
+    Output("lat", "value"),
+    Output("lon", "value"),
+    Input("edit-control", "geojson"),
+)
+def point_fill(geojson):
+    if geojson and len(geojson["features"]) > 0:
+        lon, lat = geojson["features"][0]["geometry"]["coordinates"]
+        return round(lat, 2), round(lon, 2)
+    return dash.no_update, dash.no_update
+
+
+@app.callback(
     Output("analyze-modal", "opened", allow_duplicate=True),
     Output("analyze-modal", "children", allow_duplicate=True),
     Output("analyze-notify", "children"),
@@ -145,7 +157,7 @@ def modal_details(n_clicks, opened, selected):
                 class_colors = [
                     f"rgb({tuple(color)})" for color in class_colors
                 ]
-            except:
+            except Exception as e:
                 class_colors = None
 
             return (
@@ -232,7 +244,6 @@ def img_display(n_clicks, selection):
     return dash.no_update, dash.no_update, dash.no_update
 
 
-# TODO: Delete image from map as well!
 @app.callback(
     Output("image-options", "rowData", allow_duplicate=True),
     Output("geojson", "data", allow_duplicate=True),
