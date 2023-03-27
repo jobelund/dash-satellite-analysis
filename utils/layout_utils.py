@@ -132,6 +132,7 @@ def image_table(df):
                     defaultColDef=dict(
                         resizable=True,
                     ),
+                    dashGridOptions={"rowSelection": "single"},
                     style={"height": "225px", "margin": "10px"},
                 )
             ),
