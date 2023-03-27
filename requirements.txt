@@ -1,4 +1,4 @@
-dash_design_kit==1.6.8
+dash_design_kit==1.6.7
 dash==2.9.1
 gunicorn==20.0.4
 pandas==1.5.1

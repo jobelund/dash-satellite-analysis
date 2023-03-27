@@ -72,6 +72,7 @@ app.layout = dmc.NotificationsProvider(
             ),
             dmc.Modal(
                 title="Image details",
+                children=details_modal([1, 2, 3]),
                 id="details-modal",
                 size="40%",
                 zIndex=10000,
