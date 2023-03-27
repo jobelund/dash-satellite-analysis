@@ -9,7 +9,15 @@ import warnings
 import pickle
 
 from constants import redis_instance, BUTTON_STYLE, COLUMN_DEFS
-from utils.layout_utils import analysis_modal, details_modal, notify_divs
+from utils.layout_utils import (
+    analysis_modal,
+    details_modal,
+    notify_divs,
+    button_toolkit,
+    leaflet_map,
+    image_table,
+    download_controls,
+)
 from utils.data_utils import (
     update_df,
     get_image,
@@ -40,111 +48,8 @@ app.layout = dmc.NotificationsProvider(
             ),
             ddk.Row(
                 children=[
-                    ddk.ControlCard(
-                        width=30,
-                        children=[
-                            ddk.CardHeader(title="Data access"),
-                            dmc.Space(h=30),
-                            ddk.ControlItem(
-                                label="Dim",
-                                children=dcc.Slider(
-                                    id="img-dim",
-                                    min=0,
-                                    max=1,
-                                    step=0.1,
-                                    value=0.1,
-                                    marks=None,
-                                    tooltip={
-                                        "placement": "bottom",
-                                        "always_visible": True,
-                                    },
-                                ),
-                            ),
-                            ddk.ControlItem(
-                                label="Date",
-                                children=dmc.DatePicker(
-                                    id="my-date-picker",
-                                    minDate=date(2015, 8, 5),
-                                    value=date(2020, 8, 5),
-                                ),
-                            ),
-                            ddk.ControlItem(
-                                label="Latitude",
-                                children=dcc.Input(
-                                    id="lat",
-                                    min=-90,
-                                    max=90,
-                                    value=50.23,
-                                    type="number",
-                                ),
-                            ),
-                            ddk.ControlItem(
-                                label="Longitude",
-                                children=dcc.Input(
-                                    id="lon",
-                                    min=-180,
-                                    max=180,
-                                    value=-120,
-                                    type="number",
-                                ),
-                            ),
-                            dmc.Space(h=50),
-                            html.Button("Download image", id="get-data"),
-                        ],
-                        style={"height": "550px"},
-                    ),
-                    ddk.Block(
-                        style={"margin": "15px"},
-                        width=70,
-                        children=[
-                            html.Div(
-                                dl.Map(
-                                    id="map-view",
-                                    center=[38.0, -95.0],
-                                    zoom=4,
-                                    minZoom=2,
-                                    children=[
-                                        dl.TileLayer(
-                                            url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
-                                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>',
-                                        ),
-                                        dl.GestureHandling(),
-                                        dl.LayersControl(
-                                            [
-                                                dl.BaseLayer(
-                                                    name="Study areas",
-                                                    checked=True,
-                                                    children=dl.GeoJSON(
-                                                        data=to_geojson(df),
-                                                        id="geojson",
-                                                    ),
-                                                ),
-                                                dl.Overlay(
-                                                    name="Satellite image",
-                                                    checked=True,
-                                                    id="satellite-img",
-                                                ),
-                                                dl.Overlay(
-                                                    name="Classified image",
-                                                    checked=True,
-                                                    id="classified-img",
-                                                ),
-                                            ]
-                                        ),
-                                        dl.FeatureGroup(
-                                            [dl.EditControl(id="edit_control")]
-                                        ),
-                                    ],
-                                    style={
-                                        "width": "100%",
-                                        "height": "550px",
-                                        "margin": "auto",
-                                        "display": "block",
-                                    },
-                                )
-                            )
-                        ],
-                    ),
+                    download_controls(),
+                    leaflet_map(df),
                 ]
             ),
             ddk.Card(
@@ -152,67 +57,12 @@ app.layout = dmc.NotificationsProvider(
                     ddk.CardHeader(title="Select imagery to view"),
                     ddk.Row(
                         [
-                            ddk.Block(
-                                width=80,
-                                children=[
-                                    dmc.LoadingOverlay(
-                                        dag.AgGrid(
-                                            id="image-options",
-                                            columnDefs=COLUMN_DEFS,
-                                            rowData=df.to_dict("records"),
-                                            columnSize="sizeToFit",
-                                            defaultColDef=dict(
-                                                resizable=True,
-                                            ),
-                                            style={"height": "250px"},
-                                        )
-                                    ),
-                                ],
-                            ),
-                            ddk.Block(
-                                width=20,
-                                children=[
-                                    dmc.Center(
-                                        html.Button(
-                                            "Display",
-                                            id="display",
-                                            style=BUTTON_STYLE,
-                                        ),
-                                    ),
-                                    dmc.Center(
-                                        html.Button(
-                                            "Crop",
-                                            id="crop",
-                                            style=BUTTON_STYLE,
-                                        ),
-                                    ),
-                                    dmc.Center(
-                                        html.Button(
-                                            "Classify",
-                                            id="classify",
-                                            style=BUTTON_STYLE,
-                                        ),
-                                    ),
-                                    dmc.Center(
-                                        html.Button(
-                                            "Investigate",
-                                            id="investigate",
-                                            style=BUTTON_STYLE,
-                                        ),
-                                    ),
-                                    dmc.Center(
-                                        html.Button(
-                                            "Delete",
-                                            id="delete",
-                                            style=BUTTON_STYLE,
-                                        )
-                                    ),
-                                ],
-                            ),
+                            image_table(df),
+                            button_toolkit(),
                         ]
                     ),
                 ],
-                style={"height": "350px"},
+                style={"height": "285px"},
             ),
             html.Div(children=notify_divs()),
             dmc.Modal(
@@ -245,7 +95,7 @@ app.layout = dmc.NotificationsProvider(
     State("image-options", "selectedRows"),
     prevent_initial_call=True,
 )
-def analyze_image_modal(n_clicks, opened, selected):
+def modal_classify(n_clicks, opened, selected):
     if n_clicks and selected:
         return not opened, analysis_modal(), dash.no_update
     if n_clicks and not selected:
@@ -270,7 +120,7 @@ def analyze_image_modal(n_clicks, opened, selected):
     State("image-options", "selectedRows"),
     prevent_initial_call=True,
 )
-def display_details_modal(n_clicks, opened, selected):
+def modal_details(n_clicks, opened, selected):
     if n_clicks and selected:
         img_id = selected[0]["id"]
         if redis_instance.exists(f"{img_id}_classified") == 1:
@@ -307,7 +157,7 @@ def display_details_modal(n_clicks, opened, selected):
     Input("display", "n_clicks"),
     State("image-options", "selectedRows"),
 )
-def display_image(n_clicks, selection):
+def img_display(n_clicks, selection):
     if n_clicks and selection:
         img_id = selection[0]["id"]
         lat = float(selection[0]["lat"])
@@ -367,7 +217,7 @@ def display_image(n_clicks, selection):
     State("image-options", "selectedRows"),
     prevent_initial_callback=True,
 )
-def delete_img(n_clicks, selection):
+def img_delete(n_clicks, selection):
     if n_clicks and selection:
         img_id = selection[0]["id"]
         for key in [img_id, f"{img_id}_metadata", f"{img_id}_classified"]:
@@ -397,40 +247,6 @@ def delete_img(n_clicks, selection):
 
 
 @app.callback(
-    Output("map-view", "center"),
-    Output("map-view", "zoom"),
-    Input("image-options", "selectedRows"),
-)
-def zoom_map(selection):
-    if selection:
-        return (float(selection[0]["lat"]), float(selection[0]["lon"])), 8
-    return dash.no_update
-
-
-@app.callback(
-    Output("data-notify", "children"),
-    Output("image-options", "rowData", allow_duplicate=True),
-    Output("geojson", "data", allow_duplicate=True),
-    Input("get-data", "n_clicks"),
-    State("my-date-picker", "value"),
-    State("lat", "value"),
-    State("lon", "value"),
-    State("img-dim", "value"),
-    prevent_initial_call=True,
-)
-def retrieve_data(n_clicks, date, lat, lon, dim):
-    if n_clicks:
-        msg = get_image(lat, lon, dim, date)
-        df = update_df()
-        return (
-            dmc.Notification(id="update", action="show", message=msg),
-            df.to_dict("records"),
-            to_geojson(df),
-        )
-    return dash.no_update, dash.no_update, dash.no_update
-
-
-@app.callback(
     Output("analyze-run-notify", "children"),
     Output("analyze-modal", "opened", allow_duplicate=True),
     Output("image-options", "rowData", allow_duplicate=True),
@@ -441,7 +257,7 @@ def retrieve_data(n_clicks, date, lat, lon, dim):
     State("analyze-modal", "opened"),
     prevent_initial_call=True,
 )
-def run_analysis(n_clicks, selection, model, n_classes, opened):
+def img_classify(n_clicks, selection, model, n_classes, opened):
     if n_clicks and selection:
         img_id = selection[0]["id"]
         img = pickle.loads(redis_instance.get(img_id))
@@ -472,6 +288,40 @@ def run_analysis(n_clicks, selection, model, n_classes, opened):
             ),
             not opened,
             update_df().to_dict("records"),
+        )
+    return dash.no_update, dash.no_update, dash.no_update
+
+
+@app.callback(
+    Output("map-view", "center"),
+    Output("map-view", "zoom"),
+    Input("image-options", "selectedRows"),
+)
+def map_zoom(selection):
+    if selection:
+        return (float(selection[0]["lat"]), float(selection[0]["lon"])), 12
+    return dash.no_update
+
+
+@app.callback(
+    Output("data-notify", "children"),
+    Output("image-options", "rowData", allow_duplicate=True),
+    Output("geojson", "data", allow_duplicate=True),
+    Input("get-data", "n_clicks"),
+    State("my-date-picker", "value"),
+    State("lat", "value"),
+    State("lon", "value"),
+    State("img-dim", "value"),
+    prevent_initial_call=True,
+)
+def data_retrieve(n_clicks, date, lat, lon, dim):
+    if n_clicks:
+        msg = get_image(lat, lon, dim, date)
+        df = update_df()
+        return (
+            dmc.Notification(id="update", action="show", message=msg),
+            df.to_dict("records"),
+            to_geojson(df),
         )
     return dash.no_update, dash.no_update, dash.no_update
 

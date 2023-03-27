@@ -27,8 +27,8 @@ window.theme = {
   },
   control_background_color: "white",
   control_text: "#606060",
-  card_margin: "15px",
-  card_padding: "20px",
+  card_margin: "10px",
+  card_padding: "10px",
   card_border: {
     width: "1px",
     style: "solid",
