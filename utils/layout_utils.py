@@ -41,8 +41,8 @@ def analysis_modal():
     return layout
 
 
-def details_modal(class_proportions):
-    pie = create_class_distribution_pie_chart(class_proportions)
+def details_modal(class_proportions, class_colors=None):
+    pie = create_class_distribution_pie_chart(class_proportions, class_colors)
     layout = dmc.Center(html.Div(dcc.Graph(figure=pie)))
     return layout
 

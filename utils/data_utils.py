@@ -161,10 +161,12 @@ def create_colored_mask_image(segmentation, n_clusters):
         (segmentation.shape[0], segmentation.shape[1], 3), dtype=np.uint8
     )
 
+    class_colors = []
     for i, color in enumerate(interpolated_colors):
         colored_mask[segmentation == i] = color
+        class_colors.append(color)
 
-    return Image.fromarray(colored_mask)
+    return Image.fromarray(colored_mask), class_colors
 
 
 def process_img(image, resize=(256, 256)):

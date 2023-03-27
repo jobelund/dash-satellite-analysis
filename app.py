@@ -4,7 +4,7 @@ from dash import dcc, html, Input, Output, State
 import dash_leaflet as dl
 import dash_mantine_components as dmc
 import warnings
-import pickle
+import pickle, json
 
 from constants import redis_instance
 from utils.layout_utils import (
@@ -124,7 +124,22 @@ def modal_details(n_clicks, opened, selected):
         img_id = selected[0]["id"]
         if redis_instance.exists(f"{img_id}_classified") == 1:
             class_proportions = selected[0]["class distribution"]
-            return not opened, details_modal(class_proportions), dash.no_update
+
+            try:
+                class_colors = json.loads(
+                    redis_instance.get(f"{img_id}_class_colors")
+                )
+                class_colors = [
+                    f"rgb({tuple(color)})" for color in class_colors
+                ]
+            except:
+                class_colors = None
+
+            return (
+                not opened,
+                details_modal(class_proportions, class_colors),
+                dash.no_update,
+            )
         else:
             return (
                 dash.no_update,
@@ -268,7 +283,9 @@ def img_classify(n_clicks, selection, model, n_classes, opened):
             class_proportions = calculate_class_proportions(
                 segmentation, n_classes
             )
-            img_classified = create_colored_mask_image(segmentation, n_classes)
+            img_classified, class_colors = create_colored_mask_image(
+                segmentation, n_classes
+            )
             img_info = pickle.loads(redis_instance.get(f"{img_id}_metadata"))
             img_info["classified"] = model
             img_info["n classes"] = n_classes
@@ -276,6 +293,9 @@ def img_classify(n_clicks, selection, model, n_classes, opened):
             redis_instance.set(f"{img_id}_metadata", pickle.dumps(img_info))
             redis_instance.set(
                 f"{img_id}_classified", pickle.dumps(img_classified)
+            )
+            redis_instance.set(
+                f"{img_id}_class_colors", json.dumps(class_colors)
             )
             message = "Image classification successfully completed."
         else:
