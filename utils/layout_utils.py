@@ -253,7 +253,7 @@ def layout():
         dmc.Modal(
             title=dmc.Text("Configure Image Analysis", weight=700),
             id="analyze-modal",
-            size="30%",
+            size="40%",
             zIndex=10000,
             overlayOpacity=0.3,
         ),

@@ -41,7 +41,8 @@ app.layout = dmc.NotificationsProvider(
                     ddk.Menu(
                         html.Button(
                             "Use Cases",
-                            id="use-cases",  # style=BUTTON_STYLE
+                            id="use-cases", 
+                            style=BUTTON_STYLE
                         )
                     ),
                 ]
