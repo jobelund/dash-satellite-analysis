@@ -1,3 +1,4 @@
+import dash
 import dash_mantine_components as dmc
 import dash_design_kit as ddk
 from dash import dcc, html
@@ -6,6 +7,7 @@ import dash_ag_grid as dag
 from datetime import date
 from utils.chart_utils import create_class_distribution_pie_chart
 from utils.data_utils import to_geojson, update_df
+from dash_extensions import BeforeAfter
 from constants import (
     BUTTON_STYLE,
     COLUMN_DEFS,
@@ -265,3 +267,71 @@ def layout():
         ),
     ]
     return layout
+
+
+use_cases_modal = dmc.Modal(
+    title=dmc.Text("Use cases", weight=700),
+    children=dmc.Tabs(
+        [
+            dmc.TabsList(
+                [
+                    dmc.Tab("Water level", value="water-levels"),
+                    dmc.Tab("Agriculture", value="agriculture"),
+                    dmc.Tab("Construction", value="construction"),
+                    dmc.Tab("Floods", value="floods"),
+                ]
+            ),
+            dmc.TabsPanel(
+                BeforeAfter(
+                    before=dash.get_asset_url(
+                        "before-after/shasta_lake_2019_july_13.jpg"
+                    ),
+                    after=dash.get_asset_url(
+                        "before-after/shasta_lake_2021_june_16.jpg"
+                    ),
+                    width=512,
+                    height=512,
+                ),
+                value="water-levels",
+            ),
+            dmc.TabsPanel(
+                BeforeAfter(
+                    before=dash.get_asset_url("before-after/crops_before.png"),
+                    after=dash.get_asset_url("before-after/crops_after.png"),
+                    width=512,
+                    height=512,
+                ),
+                value="agriculture",
+            ),
+            dmc.TabsPanel(
+                BeforeAfter(
+                    before=dash.get_asset_url(
+                        "before-after/construction_before.png"
+                    ),
+                    after=dash.get_asset_url(
+                        "before-after/construction_after.png"
+                    ),
+                    width=512,
+                    height=512,
+                ),
+                value="construction",
+            ),
+            dmc.TabsPanel(
+                BeforeAfter(
+                    before=dash.get_asset_url("before-after/flood_before.png"),
+                    after=dash.get_asset_url("before-after/flood_after.png"),
+                    width=512,
+                    height=512,
+                ),
+                value="floods",
+            ),
+        ],
+        color="red",
+        orientation="vertical",
+        value="water-levels",
+    ),
+    id="use-cases-modal",
+    size="40%",
+    zIndex=10000,
+    overlayOpacity=0.3,
+)

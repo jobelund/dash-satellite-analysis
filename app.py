@@ -6,8 +6,13 @@ import dash_mantine_components as dmc
 import warnings
 import pickle, json
 
-from constants import redis_instance
-from utils.layout_utils import analysis_modal, details_modal, layout
+from constants import redis_instance, BUTTON_STYLE
+from utils.layout_utils import (
+    analysis_modal,
+    details_modal,
+    layout,
+    use_cases_modal,
+)
 from utils.data_utils import (
     update_df,
     get_image,
@@ -33,9 +38,16 @@ app.layout = dmc.NotificationsProvider(
                 [
                     ddk.Logo(src=app.get_asset_url("plotly_logo.png")),
                     ddk.Title("Land cover analysis and classification"),
+                    ddk.Menu(
+                        html.Button(
+                            "Use Cases",
+                            id="use-cases",  # style=BUTTON_STYLE
+                        )
+                    ),
                 ]
             ),
             html.Div(id="content", children=layout()),
+            use_cases_modal,
         ]
     ),
     autoClose=5000,
@@ -82,6 +94,15 @@ def modal_classify(n_clicks, opened, selected):
             ),
         )
     return dash.no_update, dash.no_update, dash.no_update
+
+
+@app.callback(
+    Output("use-cases-modal", "opened"),
+    Input("use-cases", "n_clicks"),
+    prevent_initial_call=True,
+)
+def modal_use_cases(n_clicks):
+    return True
 
 
 @app.callback(
