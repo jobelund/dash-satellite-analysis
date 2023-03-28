@@ -76,8 +76,8 @@ def point_fill(geojson):
 
 
 @app.callback(
-    Output("analyze-modal", "opened", allow_duplicate=True),
-    Output("analyze-modal", "children", allow_duplicate=True),
+    Output("analyze-modal", "opened"),
+    Output("analyze-modal", "children"),
     Output("analyze-notify", "children"),
     Input("classify", "n_clicks"),
     State("analyze-modal", "opened"),
@@ -208,8 +208,8 @@ def img_display(n_clicks, selection):
 
 
 @app.callback(
-    Output("image-options", "rowData", allow_duplicate=True),
-    Output("geojson", "data", allow_duplicate=True),
+    Output("image-options", "rowData"),
+    Output("geojson", "data"),
     Output("satellite-img", "children", allow_duplicate=True),
     Output("classified-img", "children", allow_duplicate=True),
     Output("image-options", "selectedRows"),
