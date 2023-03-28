@@ -30,7 +30,7 @@ COLUMN_DEFS = [
     {"field": "class distribution"},
 ]
 
-REDIS_EXPIRE_SEC = 60 * 60 * 24  # Expire data in 24 hours
+REDIS_EXPIRE_SEC = 60 * 60 * 2  # Expire data in 2 hours
 os.environ["REDIS_URL"] = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379")
 redis_instance = redis.StrictRedis.from_url(
     os.environ.get("REDIS_URL", "redis://127.0.0.1:6379")
