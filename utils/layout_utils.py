@@ -113,6 +113,7 @@ def leaflet_map(df):
                     "height": "500px",
                     "margin": "auto",
                     "display": "block",
+                    "z-index": "1",
                 },
             )
         ),
@@ -162,11 +163,15 @@ def download_controls():
             ),
             ddk.ControlItem(
                 label="Date",
-                children=dmc.DatePicker(
+                children=dcc.DatePickerSingle(
                     id="my-date-picker",
-                    minDate=date(2015, 8, 5),
-                    value=date(2020, 8, 5),
+                    min_date_allowed=date(2015, 8, 5),
+                    max_date_allowed=date(2021, 9, 19),
+                    date=date(2020, 8, 5),
                 ),
+                style={
+                    "z-index": "2",
+                },
             ),
             ddk.ControlItem(
                 label="Latitude",
