@@ -163,21 +163,14 @@ def download_controls():
             ),
             ddk.ControlItem(
                 label="Date",
-                children=dmc.DatePicker(
+                children=dcc.DatePickerSingle(
                     id="my-date-picker",
-                    minDate=date(2015, 8, 5),
-                    value=date(2020, 8, 5),
+                    min_date_allowed=date(2015, 8, 5),
+                    max_date_allowed=date(2021, 9, 19),
+                    date=date(2020, 8, 5),
                 ),
-                # label="Date",
-                # children=dcc.DatePickerSingle(
-                #     id="my-date-picker",
-                #     min_date_allowed=date(2015, 8, 5),
-                #     max_date_allowed=date(2021, 9, 19),
-                #     date=date(2020, 8, 5),
-                # ),
                 style={
                     "z-index": "2",
-                    # "width": "300 px",
                 },
             ),
             ddk.ControlItem(
