@@ -6,16 +6,11 @@ import dash_mantine_components as dmc
 import warnings
 import pickle, json
 
-from constants import redis_instance, PANEL_HEIGHT
+from constants import redis_instance
 from utils.layout_utils import (
     analysis_modal,
     details_modal,
-    layout,
-    notify_divs,
-    button_toolkit,
-    leaflet_map,
-    image_table,
-    download_controls,
+    layout
 )
 from utils.data_utils import (
     update_df,
