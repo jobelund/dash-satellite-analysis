@@ -7,15 +7,7 @@ import warnings
 import pickle, json
 
 from constants import redis_instance
-from utils.layout_utils import (
-    analysis_modal,
-    details_modal,
-    notify_divs,
-    button_toolkit,
-    leaflet_map,
-    image_table,
-    download_controls,
-)
+from utils.layout_utils import analysis_modal, details_modal, layout
 from utils.data_utils import (
     update_df,
     get_image,
@@ -33,51 +25,17 @@ app = dash.Dash(__name__, prevent_initial_callbacks="initial_duplicate")
 app.title = "Land cover analysis and classification"
 server = app.server  # expose server variable for Procfile
 
-df = update_df()
-
 app.layout = dmc.NotificationsProvider(
     ddk.App(
-        [
+        children=[
+            dcc.Location(id="url", refresh=False),
             ddk.Header(
                 [
                     ddk.Logo(src=app.get_asset_url("plotly_logo.png")),
                     ddk.Title("Land cover analysis and classification"),
                 ]
             ),
-            ddk.Row(
-                children=[
-                    download_controls(),
-                    leaflet_map(df),
-                ]
-            ),
-            ddk.Card(
-                children=[
-                    ddk.CardHeader(title="Select imagery to view"),
-                    ddk.Row(
-                        [
-                            image_table(df),
-                            button_toolkit(),
-                        ]
-                    ),
-                ],
-                style={"height": "300px"},
-            ),
-            html.Div(children=notify_divs()),
-            dmc.Modal(
-                title="Configure Image Analysis",
-                id="analyze-modal",
-                size="40%",
-                zIndex=10000,
-                overlayOpacity=0.3,
-            ),
-            dmc.Modal(
-                title="Image details",
-                children=details_modal([1, 2, 3]),
-                id="details-modal",
-                size="40%",
-                zIndex=10000,
-                overlayOpacity=0.3,
-            ),
+            html.Div(id="content", children=layout()),
         ]
     ),
     autoClose=5000,
@@ -85,14 +43,30 @@ app.layout = dmc.NotificationsProvider(
 )
 
 
+@app.callback(Output("content", "children"), Input("url", "pathname"))
+def load_layout(url):
+    return layout()
+
+
 @app.callback(
-    Output("analyze-modal", "opened", allow_duplicate=True),
-    Output("analyze-modal", "children", allow_duplicate=True),
+    Output("lat", "value"),
+    Output("lon", "value"),
+    Input("edit-control", "geojson"),
+)
+def point_fill(geojson):
+    if geojson and len(geojson["features"]) > 0:
+        lon, lat = geojson["features"][0]["geometry"]["coordinates"]
+        return round(lat, 2), round(lon, 2)
+    return dash.no_update, dash.no_update
+
+
+@app.callback(
+    Output("analyze-modal", "opened"),
+    Output("analyze-modal", "children"),
     Output("analyze-notify", "children"),
     Input("classify", "n_clicks"),
     State("analyze-modal", "opened"),
     State("image-options", "selectedRows"),
-    prevent_initial_call=True,
 )
 def modal_classify(n_clicks, opened, selected):
     if n_clicks and selected:
@@ -117,7 +91,6 @@ def modal_classify(n_clicks, opened, selected):
     Input("investigate", "n_clicks"),
     State("details-modal", "opened"),
     State("image-options", "selectedRows"),
-    prevent_initial_call=True,
 )
 def modal_details(n_clicks, opened, selected):
     if n_clicks and selected:
@@ -132,8 +105,16 @@ def modal_details(n_clicks, opened, selected):
                 class_colors = [
                     f"rgb({tuple(color)})" for color in class_colors
                 ]
-            except:
-                class_colors = None
+            except Exception as e:
+                return (
+                    dash.no_update,
+                    dash.no_update,
+                    dmc.Notification(
+                        id="investigate-notfication",
+                        action="show",
+                        message="Can't investigate. Error retrieving class information.",
+                    ),
+                )
 
             return (
                 not opened,
@@ -164,7 +145,6 @@ def modal_details(n_clicks, opened, selected):
     return dash.no_update, dash.no_update, dash.no_update
 
 
-# TODO: Somewhat buggy - maybe have display always on when a row is selected?
 @app.callback(
     Output("satellite-img", "children"),
     Output("classified-img", "children"),
@@ -185,12 +165,10 @@ def img_display(n_clicks, selection):
             [(lat + (dim / 2)), (lon + ((dim / 2)))],
         ]
 
-        layer_img = dl.LayerGroup(
-            dl.ImageOverlay(
-                opacity=0.95,
-                url=img,
-                bounds=image_bounds,
-            )
+        layer_img = dl.ImageOverlay(
+            opacity=0.95,
+            url=img,
+            bounds=image_bounds,
         )
 
         layer_classified = None
@@ -198,12 +176,10 @@ def img_display(n_clicks, selection):
             img_classified = pickle.loads(
                 redis_instance.get(f"{img_id}_classified")
             )
-            layer_classified = dl.LayerGroup(
-                dl.ImageOverlay(
-                    opacity=0.95,
-                    url=img_classified,
-                    bounds=image_bounds,
-                )
+            layer_classified = dl.ImageOverlay(
+                opacity=0.95,
+                url=img_classified,
+                bounds=image_bounds,
             )
 
         return (
@@ -224,14 +200,15 @@ def img_display(n_clicks, selection):
     return dash.no_update, dash.no_update, dash.no_update
 
 
-# TODO: Delete image from map as well!
 @app.callback(
-    Output("image-options", "rowData", allow_duplicate=True),
-    Output("geojson", "data", allow_duplicate=True),
+    Output("image-options", "rowData"),
+    Output("geojson", "data"),
+    Output("satellite-img", "children", allow_duplicate=True),
+    Output("classified-img", "children", allow_duplicate=True),
+    Output("image-options", "selectedRows"),
     Output("delete-notify", "children"),
     Input("delete", "n_clicks"),
     State("image-options", "selectedRows"),
-    prevent_initial_callback=True,
 )
 def img_delete(n_clicks, selection):
     if n_clicks and selection:
@@ -248,6 +225,9 @@ def img_delete(n_clicks, selection):
                 action="show",
                 message=f"{img_id} successfully deleted.",
             ),
+            None,
+            None,
+            None,
         )
     elif n_clicks and not selection:
         return (
@@ -258,8 +238,18 @@ def img_delete(n_clicks, selection):
                 action="show",
                 message="Can't delete. Please select an image from the table.",
             ),
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
         )
-    return dash.no_update, dash.no_update, dash.no_update
+    return (
+        dash.no_update,
+        dash.no_update,
+        dash.no_update,
+        dash.no_update,
+        dash.no_update,
+        dash.no_update,
+    )
 
 
 @app.callback(
@@ -271,7 +261,6 @@ def img_delete(n_clicks, selection):
     State("model-select", "value"),
     State("n-classes", "value"),
     State("analyze-modal", "opened"),
-    prevent_initial_call=True,
 )
 def img_classify(n_clicks, selection, model, n_classes, opened):
     if n_clicks and selection:
@@ -316,12 +305,19 @@ def img_classify(n_clicks, selection, model, n_classes, opened):
 @app.callback(
     Output("map-view", "center"),
     Output("map-view", "zoom"),
+    Output("satellite-img", "children", allow_duplicate=True),
+    Output("classified-img", "children", allow_duplicate=True),
     Input("image-options", "selectedRows"),
 )
-def map_zoom(selection):
+def row_select(selection):
     if selection:
-        return (float(selection[0]["lat"]), float(selection[0]["lon"])), 12
-    return dash.no_update
+        return (
+            (float(selection[0]["lat"]), float(selection[0]["lon"])),
+            12,
+            None,
+            None,
+        )
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
 
 @app.callback(
@@ -334,7 +330,6 @@ def map_zoom(selection):
     State("lon", "value"),
     State("img-dim", "value"),
     State("name", "value"),
-    prevent_initial_call=True,
 )
 def data_retrieve(n_clicks, date, lat, lon, dim, name):
     if n_clicks:

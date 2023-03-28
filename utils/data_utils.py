@@ -1,4 +1,4 @@
-import requests, PIL, io, json, pickle, cv2
+import requests, PIL, io, json, pickle  # , cv2
 from constants import redis_instance, REDIS_EXPIRE_SEC, NASA_KEY
 import pandas as pd
 import dash_leaflet.express as dlx
@@ -27,7 +27,7 @@ def get_image(lat, lon, dim, name, date="2014-02-04"):
             img_data = requests.get(img_url).content
             image_bytes = io.BytesIO(img_data)
             img = PIL.Image.open(image_bytes)
-            img = enhance_image(img)
+            # img = enhance_image(img)
             img_info = {
                 "name": name,
                 "lat": lat,
@@ -187,33 +187,33 @@ def process_img(image, resize=(256, 256)):
     return img_array
 
 
-def enhance_image(image, clip_limit=3.1):
-    """
-    Enhances the contrast of a PIL image using the CLAHE algorithm.
+# def enhance_image(image, clip_limit=3.1):
+#     """
+#     Enhances the contrast of a PIL image using the CLAHE algorithm.
 
-    Args:
-        image (PIL.Image.Image): The input RGB image to enhance.
-        clip_limit (float, optional): The CLAHE clip limit. Defaults to 3.1.
+#     Args:
+#         image (PIL.Image.Image): The input RGB image to enhance.
+#         clip_limit (float, optional): The CLAHE clip limit. Defaults to 3.1.
 
-    Returns:
-        PIL.Image.Image: A new PIL image with enhanced contrast.
+#     Returns:
+#         PIL.Image.Image: A new PIL image with enhanced contrast.
 
-    """
-    img_array = np.array(image)
+#     """
+#     img_array = np.array(image)
 
-    # Convert to LAB color space
-    lab = cv2.cvtColor(img_array, cv2.COLOR_RGB2LAB)
+#     # Convert to LAB color space
+#     lab = cv2.cvtColor(img_array, cv2.COLOR_RGB2LAB)
 
-    # Split into channels
-    l, a, b = cv2.split(lab)
+#     # Split into channels
+#     l, a, b = cv2.split(lab)
 
-    # Apply histogram equalization to the L channel
-    clahe = cv2.createCLAHE(clip_limit, tileGridSize=(10, 10))
-    cl = clahe.apply(l)
+#     # Apply histogram equalization to the L channel
+#     clahe = cv2.createCLAHE(clip_limit, tileGridSize=(10, 10))
+#     cl = clahe.apply(l)
 
-    # Merge the channels back into the LAB image
-    lab = cv2.merge((cl, a, b))
+#     # Merge the channels back into the LAB image
+#     lab = cv2.merge((cl, a, b))
 
-    # Convert back to RGB color space
-    enhanced_image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
-    return Image.fromarray(enhanced_image)
+#     # Convert back to RGB color space
+#     enhanced_image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
+#     return Image.fromarray(enhanced_image)

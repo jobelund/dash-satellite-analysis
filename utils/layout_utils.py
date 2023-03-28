@@ -5,8 +5,14 @@ import dash_leaflet as dl
 import dash_ag_grid as dag
 from datetime import date
 from utils.chart_utils import create_class_distribution_pie_chart
-from utils.data_utils import to_geojson
-from constants import BUTTON_STYLE, COLUMN_DEFS
+from utils.data_utils import to_geojson, update_df
+from constants import (
+    BUTTON_STYLE,
+    COLUMN_DEFS,
+    MAP_HEIGHT,
+    GRID_HEIGHT,
+    PANEL_HEIGHT,
+)
 
 
 def analysis_modal():
@@ -43,7 +49,15 @@ def analysis_modal():
 
 def details_modal(class_proportions, class_colors=None):
     pie = create_class_distribution_pie_chart(class_proportions, class_colors)
-    layout = dmc.Center(html.Div(dcc.Graph(figure=pie)))
+    layout = dmc.Center(
+        html.Div(
+            [
+                dmc.Text("Proportion of land cover classes across study area"),
+                dmc.Space(h=20),
+                dcc.Graph(figure=pie),
+            ]
+        )
+    )
     return layout
 
 
@@ -97,20 +111,20 @@ def leaflet_map(df):
                             dl.Overlay(
                                 name="Satellite image",
                                 checked=True,
-                                id="satellite-img",
+                                children=dl.LayerGroup(id="satellite-img"),
                             ),
                             dl.Overlay(
                                 name="Classified image",
                                 checked=True,
-                                id="classified-img",
+                                children=dl.LayerGroup(id="classified-img"),
                             ),
                         ]
                     ),
-                    dl.FeatureGroup([dl.EditControl(id="edit_control")]),
+                    dl.FeatureGroup([dl.EditControl(id="edit-control")]),
                 ],
                 style={
                     "width": "100%",
-                    "height": "500px",
+                    "height": MAP_HEIGHT,
                     "margin": "auto",
                     "display": "block",
                     "z-index": "1",
@@ -127,14 +141,17 @@ def image_table(df):
             dmc.LoadingOverlay(
                 dag.AgGrid(
                     id="image-options",
+                    className="ag-theme-material",
                     columnDefs=COLUMN_DEFS,
                     rowData=df.to_dict("records"),
                     columnSize="sizeToFit",
-                    defaultColDef=dict(
-                        resizable=True,
-                    ),
+                    defaultColDef={
+                        "resizable": True,
+                        "sortable": True,
+                        "filter": True,
+                    },
                     dashGridOptions={"rowSelection": "single"},
-                    style={"height": "225px", "margin": "10px"},
+                    style={"height": GRID_HEIGHT, "margin": "10px"},
                 )
             ),
         ],
@@ -199,7 +216,52 @@ def download_controls():
                     type="text", id="name", placeholder="Image name..."
                 ),
             ),
-            html.Button("Download image", id="get-data"),
+            dmc.Center(
+                html.Button(
+                    "Download image", id="get-data", style=BUTTON_STYLE
+                )
+            ),
         ],
-        style={"height": "500px"},
+        style={"height": MAP_HEIGHT},
     )
+
+
+def layout():
+    df = update_df()
+    layout = [
+        ddk.Row(
+            children=[
+                download_controls(),
+                leaflet_map(df),
+            ]
+        ),
+        ddk.Card(
+            children=[
+                ddk.CardHeader(title="Select imagery to view"),
+                ddk.Row(
+                    [
+                        image_table(df),
+                        button_toolkit(),
+                    ]
+                ),
+            ],
+            style={"height": PANEL_HEIGHT},
+        ),
+        html.Div(children=notify_divs()),
+        dmc.Modal(
+            title=dmc.Text("Configure Image Analysis", weight=700),
+            id="analyze-modal",
+            size="30%",
+            zIndex=10000,
+            overlayOpacity=0.3,
+        ),
+        dmc.Modal(
+            title=dmc.Text("Image details", weight=700),
+            children=details_modal([1, 2, 3]),
+            id="details-modal",
+            size="40%",
+            zIndex=10000,
+            overlayOpacity=0.3,
+        ),
+    ]
+    return layout
