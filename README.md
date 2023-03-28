@@ -34,4 +34,9 @@ python app.py
 
 
 
-
+---
+####Image Sources
+- [Water level](https://earthobservatory.nasa.gov/images/148447/california-reservoirs-reflect-deepening-drought)
+- [Agriculture](https://www.mdpi.com/2072-4292/11/7/888)
+- [Construction](https://www.kaggle.com/code/ayushdabra/inceptionresnetv2-unet-81-dice-coeff-86-acc)
+- [Floods](https://www.kaggle.com/code/utkarshsaxenadn/flood-area-segmentation-deeplabv3)
