@@ -332,7 +332,7 @@ def row_select(selection):
     Output("image-options", "rowData", allow_duplicate=True),
     Output("geojson", "data", allow_duplicate=True),
     Input("get-data", "n_clicks"),
-    State("my-date-picker", "value"),
+    State("my-date-picker", "date"),
     State("lat", "value"),
     State("lon", "value"),
     State("img-dim", "value"),

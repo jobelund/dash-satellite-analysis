@@ -171,10 +171,11 @@ def download_controls():
             ),
             ddk.ControlItem(
                 label="Date",
-                children=dmc.DatePicker(
+                children=dcc.DatePickerSingle(
                     id="my-date-picker",
-                    minDate=date(2015, 8, 5),
-                    value=date(2020, 8, 5),
+                    #minDate=date(2015, 8, 5),
+                    date=date(2020, 8, 5),
+                    #style={'width': 200}
                 ),
             ),
             ddk.ControlItem(
