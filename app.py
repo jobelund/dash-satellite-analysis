@@ -6,7 +6,7 @@ import dash_mantine_components as dmc
 import warnings
 import pickle, json
 
-from constants import redis_instance, BUTTON_STYLE
+from constants import redis_instance, BUTTON_STYLE, REDIS_EXPIRE_SEC
 from utils.layout_utils import (
     analysis_modal,
     details_modal,
@@ -306,6 +306,9 @@ def img_classify(n_clicks, selection, model, n_classes, opened):
             redis_instance.set(
                 f"{img_id}_class_colors", json.dumps(class_colors)
             )
+
+            redis_instance.expire(f"{img_id}_class_colors", REDIS_EXPIRE_SEC)
+            redis_instance.expire(f"{img_id}_metadata", REDIS_EXPIRE_SEC)
             message = "Image classification successfully completed."
         else:
             message = (
