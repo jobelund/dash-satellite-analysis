@@ -41,14 +41,14 @@ app.layout = dmc.NotificationsProvider(
                     ddk.Menu(
                         html.Button(
                             "Use Cases",
-                            id="use-cases", 
+                            id="use-cases",
                             style=BUTTON_STYLE
                         )
                     ),
                 ]
             ),
             html.Div(id="content", children=layout()),
-            use_cases_modal,
+            use_cases_modal(),
         ]
     ),
     autoClose=5000,

@@ -269,7 +269,8 @@ def layout():
     return layout
 
 
-use_cases_modal = dmc.Modal(
+def use_cases_modal():
+    return dmc.Modal(
     title=dmc.Text("Use cases", weight=700),
     children=dmc.Tabs(
         [
