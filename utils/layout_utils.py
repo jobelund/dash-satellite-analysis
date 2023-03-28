@@ -283,55 +283,75 @@ def use_cases_modal():
                     ]
                 ),
                 dmc.TabsPanel(
-                    BeforeAfter(
-                        before=dash.get_asset_url(
-                            "before-after/shasta_lake_2019_july_13.jpg"
+                    [
+                        BeforeAfter(
+                            before=dash.get_asset_url(
+                                "before-after/shasta_lake_2019_july_13.jpg"
+                            ),
+                            after=dash.get_asset_url(
+                                "before-after/shasta_lake_2021_june_16.jpg"
+                            ),
+                            width=512,
+                            height=512,
                         ),
-                        after=dash.get_asset_url(
-                            "before-after/shasta_lake_2021_june_16.jpg"
+                        dcc.Markdown(
+                            "[Source](https://earthobservatory.nasa.gov/images/148447/california-reservoirs-reflect-deepening-drought)"
                         ),
-                        width=512,
-                        height=512,
-                    ),
+                    ],
                     value="water-levels",
                 ),
                 dmc.TabsPanel(
-                    BeforeAfter(
-                        before=dash.get_asset_url(
-                            "before-after/crops_before.png"
+                    [
+                        BeforeAfter(
+                            before=dash.get_asset_url(
+                                "before-after/crops_before.png"
+                            ),
+                            after=dash.get_asset_url(
+                                "before-after/crops_after.png"
+                            ),
+                            width=512,
+                            height=512,
                         ),
-                        after=dash.get_asset_url(
-                            "before-after/crops_after.png"
+                        dcc.Markdown(
+                            "[Source](https://www.mdpi.com/2072-4292/11/7/888)"
                         ),
-                        width=512,
-                        height=512,
-                    ),
+                    ],
                     value="agriculture",
                 ),
                 dmc.TabsPanel(
-                    BeforeAfter(
-                        before=dash.get_asset_url(
-                            "before-after/construction_before.png"
+                    [
+                        BeforeAfter(
+                            before=dash.get_asset_url(
+                                "before-after/construction_before.png"
+                            ),
+                            after=dash.get_asset_url(
+                                "before-after/construction_after.png"
+                            ),
+                            width=512,
+                            height=512,
                         ),
-                        after=dash.get_asset_url(
-                            "before-after/construction_after.png"
+                        dcc.Markdown(
+                            "[Source](https://www.kaggle.com/code/ayushdabra/inceptionresnetv2-unet-81-dice-coeff-86-acc)"
                         ),
-                        width=512,
-                        height=512,
-                    ),
+                    ],
                     value="construction",
                 ),
                 dmc.TabsPanel(
-                    BeforeAfter(
-                        before=dash.get_asset_url(
-                            "before-after/flood_before.png"
+                    [
+                        BeforeAfter(
+                            before=dash.get_asset_url(
+                                "before-after/flood_before.png"
+                            ),
+                            after=dash.get_asset_url(
+                                "before-after/flood_after.png"
+                            ),
+                            width=512,
+                            height=512,
                         ),
-                        after=dash.get_asset_url(
-                            "before-after/flood_after.png"
+                        dcc.Markdown(
+                            "[Source](https://www.kaggle.com/code/utkarshsaxenadn/flood-area-segmentation-deeplabv3)"
                         ),
-                        width=512,
-                        height=512,
-                    ),
+                    ],
                     value="floods",
                 ),
             ],
