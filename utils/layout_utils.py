@@ -49,7 +49,15 @@ def analysis_modal():
 
 def details_modal(class_proportions, class_colors=None):
     pie = create_class_distribution_pie_chart(class_proportions, class_colors)
-    layout = dmc.Center(html.Div(dcc.Graph(figure=pie)))
+    layout = dmc.Center(
+        html.Div(
+            [
+                dmc.Text("Proportion of land cover classes across study area"),
+                dmc.Space(h=20),
+                dcc.Graph(figure=pie),
+            ]
+        )
+    )
     return layout
 
 
@@ -241,14 +249,14 @@ def layout():
         ),
         html.Div(children=notify_divs()),
         dmc.Modal(
-            title="Configure Image Analysis",
+            title=dmc.Text("Configure Image Analysis", weight=700),
             id="analyze-modal",
-            size="40%",
+            size="30%",
             zIndex=10000,
             overlayOpacity=0.3,
         ),
         dmc.Modal(
-            title="Image details",
+            title=dmc.Text("Image details", weight=700),
             children=details_modal([1, 2, 3]),
             id="details-modal",
             size="40%",

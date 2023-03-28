@@ -1,4 +1,4 @@
-import requests, PIL, io, json, pickle #, cv2
+import requests, PIL, io, json, pickle  # , cv2
 from constants import redis_instance, REDIS_EXPIRE_SEC, NASA_KEY
 import pandas as pd
 import dash_leaflet.express as dlx
@@ -27,7 +27,7 @@ def get_image(lat, lon, dim, name, date="2014-02-04"):
             img_data = requests.get(img_url).content
             image_bytes = io.BytesIO(img_data)
             img = PIL.Image.open(image_bytes)
-            #img = enhance_image(img)
+            # img = enhance_image(img)
             img_info = {
                 "name": name,
                 "lat": lat,

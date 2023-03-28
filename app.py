@@ -7,11 +7,7 @@ import warnings
 import pickle, json
 
 from constants import redis_instance
-from utils.layout_utils import (
-    analysis_modal,
-    details_modal,
-    layout
-)
+from utils.layout_utils import analysis_modal, details_modal, layout
 from utils.data_utils import (
     update_df,
     get_image,
@@ -39,10 +35,7 @@ app.layout = dmc.NotificationsProvider(
                     ddk.Title("Land cover analysis and classification"),
                 ]
             ),
-            html.Div(
-                id="content",
-                children=layout()
-            ),
+            html.Div(id="content", children=layout()),
         ]
     ),
     autoClose=5000,
@@ -50,10 +43,7 @@ app.layout = dmc.NotificationsProvider(
 )
 
 
-@app.callback(
-        Output('content', 'children'),
-        Input('url', 'pathname')
-)
+@app.callback(Output("content", "children"), Input("url", "pathname"))
 def load_layout(url):
     return layout()
 
