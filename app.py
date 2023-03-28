@@ -116,7 +116,15 @@ def modal_details(n_clicks, opened, selected):
                     f"rgb({tuple(color)})" for color in class_colors
                 ]
             except Exception as e:
-                class_colors = None
+                return (
+                    dash.no_update,
+                    dash.no_update,
+                    dmc.Notification(
+                        id="investigate-notfication",
+                        action="show",
+                        message="Can't investigate. Error retrieving class information.",
+                    ),
+                )
 
             return (
                 not opened,
