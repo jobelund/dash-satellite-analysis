@@ -40,9 +40,7 @@ app.layout = dmc.NotificationsProvider(
                     ddk.Title("Land cover analysis and classification"),
                     ddk.Menu(
                         html.Button(
-                            "Use Cases",
-                            id="use-cases",
-                            style=BUTTON_STYLE
+                            "Use Cases", id="use-cases", style=BUTTON_STYLE
                         )
                     ),
                 ]

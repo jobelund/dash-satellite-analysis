@@ -271,68 +271,76 @@ def layout():
 
 def use_cases_modal():
     return dmc.Modal(
-    title=dmc.Text("Use cases", weight=700),
-    children=dmc.Tabs(
-        [
-            dmc.TabsList(
-                [
-                    dmc.Tab("Water level", value="water-levels"),
-                    dmc.Tab("Agriculture", value="agriculture"),
-                    dmc.Tab("Construction", value="construction"),
-                    dmc.Tab("Floods", value="floods"),
-                ]
-            ),
-            dmc.TabsPanel(
-                BeforeAfter(
-                    before=dash.get_asset_url(
-                        "before-after/shasta_lake_2019_july_13.jpg"
-                    ),
-                    after=dash.get_asset_url(
-                        "before-after/shasta_lake_2021_june_16.jpg"
-                    ),
-                    width=512,
-                    height=512,
+        title=dmc.Text("Use cases", weight=700),
+        children=dmc.Tabs(
+            [
+                dmc.TabsList(
+                    [
+                        dmc.Tab("Water level", value="water-levels"),
+                        dmc.Tab("Agriculture", value="agriculture"),
+                        dmc.Tab("Construction", value="construction"),
+                        dmc.Tab("Floods", value="floods"),
+                    ]
                 ),
-                value="water-levels",
-            ),
-            dmc.TabsPanel(
-                BeforeAfter(
-                    before=dash.get_asset_url("before-after/crops_before.png"),
-                    after=dash.get_asset_url("before-after/crops_after.png"),
-                    width=512,
-                    height=512,
-                ),
-                value="agriculture",
-            ),
-            dmc.TabsPanel(
-                BeforeAfter(
-                    before=dash.get_asset_url(
-                        "before-after/construction_before.png"
+                dmc.TabsPanel(
+                    BeforeAfter(
+                        before=dash.get_asset_url(
+                            "before-after/shasta_lake_2019_july_13.jpg"
+                        ),
+                        after=dash.get_asset_url(
+                            "before-after/shasta_lake_2021_june_16.jpg"
+                        ),
+                        width=512,
+                        height=512,
                     ),
-                    after=dash.get_asset_url(
-                        "before-after/construction_after.png"
+                    value="water-levels",
+                ),
+                dmc.TabsPanel(
+                    BeforeAfter(
+                        before=dash.get_asset_url(
+                            "before-after/crops_before.png"
+                        ),
+                        after=dash.get_asset_url(
+                            "before-after/crops_after.png"
+                        ),
+                        width=512,
+                        height=512,
                     ),
-                    width=512,
-                    height=512,
+                    value="agriculture",
                 ),
-                value="construction",
-            ),
-            dmc.TabsPanel(
-                BeforeAfter(
-                    before=dash.get_asset_url("before-after/flood_before.png"),
-                    after=dash.get_asset_url("before-after/flood_after.png"),
-                    width=512,
-                    height=512,
+                dmc.TabsPanel(
+                    BeforeAfter(
+                        before=dash.get_asset_url(
+                            "before-after/construction_before.png"
+                        ),
+                        after=dash.get_asset_url(
+                            "before-after/construction_after.png"
+                        ),
+                        width=512,
+                        height=512,
+                    ),
+                    value="construction",
                 ),
-                value="floods",
-            ),
-        ],
-        color="red",
-        orientation="vertical",
-        value="water-levels",
-    ),
-    id="use-cases-modal",
-    size="40%",
-    zIndex=10000,
-    overlayOpacity=0.3,
-)
+                dmc.TabsPanel(
+                    BeforeAfter(
+                        before=dash.get_asset_url(
+                            "before-after/flood_before.png"
+                        ),
+                        after=dash.get_asset_url(
+                            "before-after/flood_after.png"
+                        ),
+                        width=512,
+                        height=512,
+                    ),
+                    value="floods",
+                ),
+            ],
+            color="red",
+            orientation="vertical",
+            value="water-levels",
+        ),
+        id="use-cases-modal",
+        size="40%",
+        zIndex=10000,
+        overlayOpacity=0.3,
+    )
